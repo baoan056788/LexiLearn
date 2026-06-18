@@ -1,0 +1,93 @@
+@model List<Test>
+@{
+    ViewData["Title"] = "Lịch sử Test";
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-history me-2"></i>Lịch sử Test</h1>
+        <p class="text-white-50">Xem lại kết quả các bài kiểm tra của bạn</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="glass-card">
+                @if (Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Ngày làm bài</th>
+                                    <th>Bộ từ vựng</th>
+                                    <th>Số câu hỏi</th>
+                                    <th>Điểm số</th>
+                                    <th>Đánh giá</th>
+                                    <th class="text-end">Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var test in Model)
+                                {
+                                    <tr>
+                                        <td>@test.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="fw-semibold">@test.VocabularySet?.Title</td>
+                                        <td>@test.TotalQuestions</td>
+                                        <td>
+                                            <span class="fw-bold @(test.Score >= 80 ? "text-success" : test.Score >= 50 ? "text-primary" : "text-danger")">
+                                                @test.Score%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (test.Score >= 80)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Xuất sắc</span>
+                                            }
+                                            else if (test.Score >= 60)
+                                            {
+                                                <span class="badge bg-primary-subtle text-primary">Khá tốt</span>
+                                            }
+                                            else if (test.Score >= 40)
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning">Trung bình</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger">Yếu</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="/Test/Result/@test.TestId" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                Xem <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                            <form asp-action="DeleteHistory" asp-controller="Test" method="post" class="d-inline ms-1" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lịch sử bài test này?')">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@test.TestId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Chưa có bài test nào</h4>
+                        <p class="text-muted">Hãy chọn một bộ từ và làm bài test để đánh giá kiến thức!</p>
+                        <a href="/VocabularySet/MySets" class="btn btn-primary-gradient rounded-pill px-4 mt-2">
+                            <i class="fas fa-layer-group me-2"></i>Chọn bộ từ
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

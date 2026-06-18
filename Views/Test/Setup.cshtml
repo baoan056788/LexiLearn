@@ -1,0 +1,76 @@
+@model LexiLearn.ViewModels.TestSetupViewModel
+@{
+    ViewData["Title"] = "Thiết lập bài kiểm tra";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="glass-card position-relative">
+                <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-close position-absolute top-0 end-0 m-3"></a>
+                
+                <div class="d-flex align-items-center mb-4">
+                    <div class="bg-primary text-white p-3 rounded me-3" style="font-size: 1.5rem;">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted mb-0">@ViewBag.SetTitle</p>
+                        <h2 class="fw-bold mb-0">Thiết lập bài kiểm tra</h2>
+                    </div>
+                </div>
+
+                <form asp-action="Start" method="post">
+                    <input type="hidden" asp-for="SetId" />
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <label asp-for="QuestionCount" class="fw-bold fs-5">Câu hỏi <span class="text-muted fw-normal" style="font-size: 0.9rem;">(tối đa 48)</span></label>
+                        <input asp-for="QuestionCount" type="number" class="form-control text-center bg-light" style="width: 80px; font-size: 1.2rem; font-weight: bold;" value="20" min="1" />
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <label asp-for="AnswerLanguage" class="fw-bold fs-5">Trả lời bằng</label>
+                        <select asp-for="AnswerLanguage" class="form-select bg-light w-auto rounded-pill px-4">
+                            <option value="Cả hai">Cả hai</option>
+                            <option value="Tiếng Anh">Tiếng Anh</option>
+                            <option value="Tiếng Việt">Tiếng Việt</option>
+                        </select>
+                    </div>
+
+                    <hr class="text-muted" />
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-5 fw-semibold">Đúng/Sai</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" asp-for="IncludeTrueFalse" style="transform: scale(1.3);">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-5 fw-semibold">Trắc nghiệm</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" asp-for="IncludeMultipleChoice" checked style="transform: scale(1.3);">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-5 fw-semibold">Ghép thẻ</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" asp-for="IncludeMatching" style="transform: scale(1.3);">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fs-5 fw-semibold">Tự luận</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" asp-for="IncludeWritten" style="transform: scale(1.3);">
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold w-100" style="background: linear-default;">Bắt đầu làm kiểm tra</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

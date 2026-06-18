@@ -1,0 +1,160 @@
+@model VocabularySet
+@{
+    ViewData["Title"] = "Learn - " + Model.Title;
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-brain me-2"></i>Learn Mode</h1>
+        <p class="text-white-50">@Model.Title • Học cá nhân hóa</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Progress bar -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted fw-bold" id="learnCounter">Câu hỏi: 1</span>
+            </div>
+            <div class="progress mb-4" style="height: 6px;">
+                <div class="progress-bar bg-gradient-primary" id="progressBar" style="width: 0%"></div>
+            </div>
+
+            <!-- Question Container -->
+            <div class="glass-card mb-4" id="questionContainer">
+                <h4 class="mb-4 text-primary fw-bold" id="questionText">Đang tải câu hỏi...</h4>
+                
+                <div id="optionsContainer" class="d-grid gap-3">
+                    <!-- Options go here -->
+                </div>
+            </div>
+
+            <!-- Results (hidden initially) -->
+            <div class="glass-card mt-4 d-none" id="resultsSection" style="max-width: 900px; margin: auto;">
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                    <h2 class="fw-bold mb-0">Tuyệt vời! Bạn đã hoàn thành vòng học.</h2>
+                    <div style="font-size: 3rem;">🎉</div>
+                </div>
+
+                <div class="text-center">
+                    <a href="/Learn/Index/@Model.SetId" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-sm" style="background: linear-gradient(135deg, #4e54c8, #8f94fb); border: none;">
+                        <i class="fas fa-sync-alt me-2"></i>Tiếp tục học phần còn lại
+                    </a>
+                    <div class="mt-4">
+                        <a href="/VocabularySet/Details/@Model.SetId" class="text-muted text-decoration-none fw-semibold">Quay lại bộ từ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const cards = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Cards.Select(c => new {
+        cardId = c.CardId,
+        term = c.Term,
+        meaning = c.Meaning.Replace(";", ",")
+    })));
+
+    let questionIndex = 0;
+    const totalQuestions = cards.length * 2; // Simple logic: answer twice to learn
+
+    function generateQuestion() {
+        if (questionIndex >= totalQuestions) {
+            showResults();
+            return;
+        }
+
+        const card = cards[Math.floor(Math.random() * cards.length)];
+        const isMultipleChoice = Math.random() > 0.5;
+
+        document.getElementById('learnCounter').textContent = `Tiến độ: ${Math.round((questionIndex / totalQuestions) * 100)}%`;
+        document.getElementById('progressBar').style.width = `${(questionIndex / totalQuestions) * 100}%`;
+
+        document.getElementById('questionText').textContent = `Nghĩa của từ "${card.term}" là gì?`;
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+
+        if (isMultipleChoice) {
+            // Generate options
+            let options = [card.meaning];
+            while(options.length < 4 && options.length < cards.length) {
+                let randomMeaning = cards[Math.floor(Math.random() * cards.length)].meaning;
+                if(!options.includes(randomMeaning)) options.push(randomMeaning);
+            }
+            options.sort(() => Math.random() - 0.5); // shuffle
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn w-100 text-start fw-semibold mb-2';
+                btn.style.cssText = 'background-color: #ffffff; border: 1px solid #3b82f6; color: #000000; padding: 16px 24px; border-radius: 8px; font-size: 1.1rem; box-shadow: none;';
+                btn.onmouseover = () => btn.style.backgroundColor = '#f8fafc';
+                btn.onmouseout = () => btn.style.backgroundColor = '#ffffff';
+                btn.textContent = opt;
+                btn.onclick = () => handleAnswer(opt === card.meaning, btn, card.meaning);
+                container.appendChild(btn);
+            });
+        } else {
+            // Typing
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'form-control form-control-lg mb-3';
+            input.placeholder = 'Nhập câu trả lời...';
+            input.id = 'typingAnswer';
+            
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-primary btn-lg w-100 fw-bold';
+            btn.textContent = 'Kiểm tra';
+            btn.onclick = () => {
+                const val = document.getElementById('typingAnswer').value.trim();
+                handleAnswer(val.toLowerCase() === card.meaning.toLowerCase(), btn, card.meaning);
+            };
+
+            container.appendChild(input);
+            container.appendChild(btn);
+            
+            // Allow enter key
+            input.addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    btn.click();
+                }
+            });
+        }
+    }
+
+    function handleAnswer(isCorrect, element, correctMeaning) {
+        if(isCorrect) {
+            element.style.cssText = 'background-color: #10b981 !important; border: 1px solid #10b981 !important; color: #ffffff !important; padding: 16px 24px; border-radius: 8px; font-size: 1.1rem; box-shadow: none;';
+            setTimeout(() => {
+                questionIndex++;
+                generateQuestion();
+            }, 800);
+        } else {
+            element.style.cssText = 'background-color: #ef4444 !important; border: 1px solid #ef4444 !important; color: #ffffff !important; padding: 16px 24px; border-radius: 8px; font-size: 1.1rem; box-shadow: none;';
+            
+            const p = document.createElement('p');
+            p.className = 'text-success fw-bold mt-3 fs-5';
+            p.textContent = `Đáp án đúng: ${correctMeaning}`;
+            document.getElementById('optionsContainer').appendChild(p);
+            
+            setTimeout(() => {
+                questionIndex++;
+                generateQuestion();
+            }, 2500);
+        }
+    }
+
+    function showResults() {
+        document.getElementById('learnCounter').parentElement.classList.add('d-none');
+        document.getElementById('progressBar').parentElement.classList.add('d-none');
+        document.getElementById('questionContainer').classList.add('d-none');
+        document.getElementById('resultsSection').classList.remove('d-none');
+    }
+
+    // Initialize
+    generateQuestion();
+</script>
+}

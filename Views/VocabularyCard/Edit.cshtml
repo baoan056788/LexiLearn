@@ -1,0 +1,51 @@
+@model VocabularyCardViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa thẻ từ";
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-edit me-2"></i>Chỉnh sửa thẻ từ</h1>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="glass-card">
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="CardId" />
+                    <input type="hidden" asp-for="SetId" />
+
+                    <div class="mb-3">
+                        <label asp-for="Term" class="form-label fw-semibold"></label>
+                        <input asp-for="Term" class="form-control" />
+                        <span asp-validation-for="Term" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Meaning" class="form-label fw-semibold"></label>
+                        <input asp-for="Meaning" class="form-control" />
+                        <span asp-validation-for="Meaning" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Ipa" class="form-label fw-semibold"></label>
+                        <input asp-for="Ipa" class="form-control" placeholder="/ɪɡˈzæm.pəl/" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Example" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Example" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary-gradient px-4"><i class="fas fa-save me-2"></i>Lưu</button>
+                        <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary px-4">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

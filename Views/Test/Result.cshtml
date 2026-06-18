@@ -1,0 +1,91 @@
+@model TestResultViewModel
+@{
+    ViewData["Title"] = "Kết quả Test";
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-chart-bar me-2"></i>Kết quả bài kiểm tra</h1>
+        <p class="text-white-50">@Model.SetTitle</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Score Summary -->
+            <div class="glass-card text-center mb-4">
+                <div class="score-circle @(Model.Score >= 80 ? "score-excellent" : Model.Score >= 50 ? "score-good" : "score-low")">
+                    <h1 class="fw-bold mb-0">@Model.Score%</h1>
+                </div>
+                <h3 class="fw-bold mt-3">
+                    @if (Model.Score >= 80) { <text>Xuất sắc! 🎉</text> }
+                    else if (Model.Score >= 60) { <text>Khá tốt! 👍</text> }
+                    else if (Model.Score >= 40) { <text>Cần cố gắng thêm 💪</text> }
+                    else { <text>Hãy ôn lại nhé! 📚</text> }
+                </h3>
+                <p class="text-muted">Đúng @Model.CorrectCount / @Model.TotalQuestions câu</p>
+                @{
+                    var wrongCardIds = Model.Questions.Where(q => !q.IsCorrect).Select(q => q.VocabularyCard?.CardId).OfType<int>().ToList();
+                    var wrongCardIdsStr = string.Join(",", wrongCardIds);
+                }
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <a href="/Test/Setup/@Model.SetId" class="btn btn-primary-gradient rounded-pill px-4">
+                        <i class="fas fa-redo me-2"></i>Làm lại
+                    </a>
+                    @if (wrongCardIds.Any())
+                    {
+                        <form asp-action="Start" asp-controller="Test" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="SetId" value="@Model.SetId" />
+                            <input type="hidden" name="SpecificCardIds" value="@wrongCardIdsStr" />
+                            <button type="submit" class="btn btn-warning rounded-pill px-4">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Ôn @wrongCardIds.Count câu sai
+                            </button>
+                        </form>
+                    }
+                    <a href="/VocabularySet/MySets" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Bộ từ của tôi
+                    </a>
+                </div>
+            </div>
+
+            <!-- Detail Results -->
+            <div class="glass-card">
+                <h5 class="fw-bold mb-3"><i class="fas fa-list-check me-2"></i>Chi tiết kết quả</h5>
+                @foreach (var q in Model.Questions)
+                {
+                    <div class="result-item @(q.IsCorrect ? "result-correct" : "result-wrong") mb-3 p-3 rounded-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold mb-1">
+                                    @if (q.IsCorrect)
+                                    {
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-times-circle text-danger me-2"></i>
+                                    }
+                                    @q.VocabularyCard?.Term
+                                </h6>
+                                <p class="mb-1 small">
+                                    <strong>Đáp án đúng:</strong> <span class="text-success">@q.CorrectAnswer</span>
+                                </p>
+                                @if (!q.IsCorrect)
+                                {
+                                    <p class="mb-0 small">
+                                        <strong>Câu trả lời:</strong> <span class="text-danger">@(q.UserAnswer ?? "Chưa trả lời")</span>
+                                    </p>
+                                }
+                            </div>
+                            <span class="badge @(q.IsCorrect ? "bg-success" : "bg-danger")">
+                                @(q.IsCorrect ? "Đúng" : "Sai")
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

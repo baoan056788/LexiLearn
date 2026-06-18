@@ -1,0 +1,224 @@
+@model VocabularySet
+@{
+    ViewData["Title"] = "Match Game - " + Model.Title;
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-puzzle-piece me-2"></i>Match Game</h1>
+        <p class="text-white-50">@Model.Title • Nối từ tiếng Anh với nghĩa tiếng Việt</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Game Info -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex gap-3">
+                    <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2" id="matchCounter">
+                        <i class="fas fa-check-double me-1"></i>0 / <span id="totalPairs">0</span>
+                    </span>
+                    <span class="badge bg-info-subtle text-info fs-6 px-3 py-2" id="timerDisplay">
+                        <i class="fas fa-clock me-1"></i>00:00
+                    </span>
+                </div>
+                <button class="btn btn-outline-primary rounded-pill px-3" onclick="startMatchGame()">
+                    <i class="fas fa-redo me-2"></i>Chơi lại
+                </button>
+            </div>
+
+            <!-- Game Board -->
+            <div class="row g-4" id="gameBoard">
+                <div class="col-md-6">
+                    <h5 class="fw-bold mb-3 text-center"><i class="fas fa-language me-2"></i>Tiếng Anh</h5>
+                    <div id="englishColumn" class="match-column"></div>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="fw-bold mb-3 text-center"><i class="fas fa-globe me-2"></i>Tiếng Việt</h5>
+                    <div id="vietnameseColumn" class="match-column"></div>
+                </div>
+            </div>
+
+            <!-- Results (hidden initially) -->
+            <div class="glass-card text-center mt-4 d-none" id="matchResults">
+                <h3 class="fw-bold mb-3"><i class="fas fa-trophy text-warning me-2"></i>Tuyệt vời!</h3>
+                <p class="fs-5">Bạn đã hoàn thành trong <strong id="finalTime">00:00</strong></p>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <button class="btn btn-primary-gradient rounded-pill px-4" onclick="startMatchGame()">
+                        <i class="fas fa-redo me-2"></i>Chơi lại
+                    </button>
+                    <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const allCards = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Cards.Select(c => new {
+        cardId = c.CardId,
+        term = c.Term,
+        meaning = c.Meaning
+    })));
+
+    let selectedEnglish = null;
+    let selectedVietnamese = null;
+    let matchedCount = 0;
+    let totalPairs = 0;
+    let timerInterval = null;
+    let seconds = 0;
+    let gameCards = [];
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startMatchGame() {
+        // Take up to 8 cards for the game
+        gameCards = shuffle([...allCards]).slice(0, 8);
+        totalPairs = gameCards.length;
+        matchedCount = 0;
+        seconds = 0;
+        selectedEnglish = null;
+        selectedVietnamese = null;
+
+        document.getElementById('totalPairs').textContent = totalPairs;
+        document.getElementById('matchCounter').innerHTML = `<i class="fas fa-check-double me-1"></i>0 / ${totalPairs}`;
+        document.getElementById('gameBoard').classList.remove('d-none');
+        document.getElementById('matchResults').classList.add('d-none');
+
+        // Clear timer
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            seconds++;
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerHTML = `<i class="fas fa-clock me-1"></i>${mins}:${secs}`;
+        }, 1000);
+
+        // Render columns
+        const engCol = document.getElementById('englishColumn');
+        const vieCol = document.getElementById('vietnameseColumn');
+        engCol.innerHTML = '';
+        vieCol.innerHTML = '';
+
+        const shuffledEng = shuffle([...gameCards]);
+        const shuffledVie = shuffle([...gameCards]);
+
+        shuffledEng.forEach(card => {
+            const btn = document.createElement('button');
+            btn.className = 'match-card';
+            btn.textContent = card.term;
+            btn.dataset.cardId = card.cardId;
+            btn.dataset.type = 'english';
+            btn.onclick = () => selectCard(btn, 'english');
+            engCol.appendChild(btn);
+        });
+
+        shuffledVie.forEach(card => {
+            const btn = document.createElement('button');
+            btn.className = 'match-card';
+            btn.textContent = card.meaning;
+            btn.dataset.cardId = card.cardId;
+            btn.dataset.type = 'vietnamese';
+            btn.onclick = () => selectCard(btn, 'vietnamese');
+            vieCol.appendChild(btn);
+        });
+    }
+
+    function selectCard(btn, type) {
+        if (btn.classList.contains('matched')) return;
+
+        if (type === 'english') {
+            if (selectedEnglish === btn) {
+                btn.classList.remove('selected');
+                selectedEnglish = null;
+                return;
+            }
+            if (selectedEnglish) selectedEnglish.classList.remove('selected');
+            selectedEnglish = btn;
+            btn.classList.add('selected');
+        } else {
+            if (selectedVietnamese === btn) {
+                btn.classList.remove('selected');
+                selectedVietnamese = null;
+                return;
+            }
+            if (selectedVietnamese) selectedVietnamese.classList.remove('selected');
+            selectedVietnamese = btn;
+            btn.classList.add('selected');
+        }
+
+        // Check match
+        if (selectedEnglish && selectedVietnamese) {
+            if (selectedEnglish.dataset.cardId === selectedVietnamese.dataset.cardId) {
+                // Correct match
+                selectedEnglish.classList.remove('selected');
+                selectedVietnamese.classList.remove('selected');
+                selectedEnglish.classList.add('matched');
+                selectedVietnamese.classList.add('matched');
+                
+                // Set green background and ensure text stays visible
+                selectedEnglish.style.cssText = 'background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; opacity: 1 !important; visibility: visible !important; cursor: default;';
+                selectedVietnamese.style.cssText = 'background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; opacity: 1 !important; visibility: visible !important; cursor: default;';
+
+                matchedCount++;
+
+                document.getElementById('matchCounter').innerHTML =
+                    `<i class="fas fa-check-double me-1"></i>${matchedCount} / ${totalPairs}`;
+
+                if (matchedCount === totalPairs) {
+                    endGame();
+                }
+            } else {
+                // Wrong match
+                selectedEnglish.classList.add('wrong');
+                selectedVietnamese.classList.add('wrong');
+                const eng = selectedEnglish;
+                const vie = selectedVietnamese;
+                setTimeout(() => {
+                    eng.classList.remove('selected', 'wrong');
+                    vie.classList.remove('selected', 'wrong');
+                }, 600);
+            }
+            selectedEnglish = null;
+            selectedVietnamese = null;
+        }
+    }
+
+    function endGame() {
+        clearInterval(timerInterval);
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('finalTime').textContent = `${mins}:${secs}`;
+
+        setTimeout(() => {
+            document.getElementById('gameBoard').classList.add('d-none');
+            document.getElementById('matchResults').classList.remove('d-none');
+        }, 500);
+
+        // Save result
+        fetch('/Study/SaveMatchResult', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                setId: @Model.SetId,
+                correctCount: matchedCount,
+                totalCards: totalPairs,
+                timeSeconds: seconds
+            })
+        });
+    }
+
+    // Auto start
+    startMatchGame();
+</script>
+}

@@ -1,0 +1,83 @@
+@model LexiLearn.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan";
+    Layout = "_AdminLayout";
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="admin-card text-center border-start border-4 border-primary">
+            <h1 class="fw-bold text-primary mb-1">@Model.TotalUsers</h1>
+            <p class="text-muted mb-0">Người dùng</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-card text-center border-start border-4 border-success">
+            <h1 class="fw-bold text-success mb-1">@Model.TotalSets</h1>
+            <p class="text-muted mb-0">Bộ từ vựng</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-card text-center border-start border-4 border-info">
+            <h1 class="fw-bold text-info mb-1">@Model.TotalCards</h1>
+            <p class="text-muted mb-0">Thẻ từ</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-card text-center border-start border-4 border-warning">
+            <h1 class="fw-bold text-warning mb-1">@Model.PendingReports</h1>
+            <p class="text-muted mb-0">Báo cáo chờ xử lý</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Người dùng mới đăng ký</h5>
+                <a href="/Admin/Users" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.RecentUsers)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@user.FullName</td>
+                                <td>@user.Email</td>
+                                <td>@user.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Đã khóa</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="admin-card bg-primary text-white text-center h-100 d-flex flex-column justify-content-center">
+            <i class="fas fa-graduation-cap fa-4x mb-3 opacity-50"></i>
+            <h3 class="fw-bold mb-1">@Model.TotalStudySessions</h3>
+            <p class="mb-0">Phiên học đã hoàn thành</p>
+            <p class="small opacity-75 mt-3">LexiLearn đang giúp sinh viên học tốt hơn mỗi ngày!</p>
+        </div>
+    </div>
+</div>

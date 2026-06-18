@@ -1,0 +1,109 @@
+@model IEnumerable<LexiLearn.Models.Category>
+@{
+    ViewData["Title"] = "Quản lý Danh mục";
+}
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white pt-4 pb-3 border-bottom-0">
+                <h5 class="fw-bold mb-0">Danh sách Danh mục</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên danh mục</th>
+                                <th>Mô tả</th>
+                                <th class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>#@item.CategoryId</td>
+                                    <td><strong class="text-primary">@item.CategoryName</strong></td>
+                                    <td class="text-muted small">@item.Description</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-light text-primary border me-1" onclick="editCategory(@item.CategoryId, '@item.CategoryName', '@item.Description')"><i class="fas fa-edit"></i></button>
+                                        <form action="/Admin/Category/Delete" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@item.CategoryId" />
+                                            <button type="submit" class="btn btn-sm btn-light text-danger border" onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.Any())
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">Chưa có danh mục nào.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white pt-4 pb-3 border-bottom-0">
+                <h5 class="fw-bold mb-0" id="formTitle">Thêm Danh mục mới</h5>
+            </div>
+            <div class="card-body">
+                <form id="categoryForm" action="/Admin/Category/Create" method="post">
+                    <input type="hidden" id="categoryId" name="id" value="" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="categoryName" name="categoryName" required placeholder="VD: IELTS, TOEIC...">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Mô tả</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3" placeholder="Nhập mô tả ngắn..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="btnSubmit"><i class="fas fa-save me-2"></i>Lưu danh mục</button>
+                        <button type="button" class="btn btn-light d-none" id="btnCancel" onclick="resetForm()">Hủy sửa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function editCategory(id, name, desc) {
+            document.getElementById('formTitle').innerText = 'Sửa Danh mục #' + id;
+            document.getElementById('categoryForm').action = '/Admin/Category/Edit';
+            document.getElementById('categoryId').value = id;
+            document.getElementById('categoryName').value = name;
+            document.getElementById('categoryDescription').value = desc !== 'null' ? desc : '';
+            
+            document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-save me-2"></i>Cập nhật';
+            document.getElementById('btnSubmit').classList.replace('btn-primary', 'btn-success');
+            document.getElementById('btnCancel').classList.remove('d-none');
+        }
+
+        function resetForm() {
+            document.getElementById('formTitle').innerText = 'Thêm Danh mục mới';
+            document.getElementById('categoryForm').action = '/Admin/Category/Create';
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryDescription').value = '';
+            
+            document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-plus me-2"></i>Thêm danh mục';
+            document.getElementById('btnSubmit').classList.replace('btn-success', 'btn-primary');
+            document.getElementById('btnCancel').classList.add('d-none');
+        }
+    </script>
+}

@@ -1,0 +1,124 @@
+@model IEnumerable<LexiLearn.Models.Report>
+@{
+    ViewData["Title"] = "Kiểm duyệt Báo cáo";
+}
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white pt-4 pb-3 border-bottom-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Danh sách báo cáo vi phạm</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="btn-group" role="group">
+                <a href="/Admin/Report" class="btn @(string.IsNullOrEmpty(ViewBag.Status) ? "btn-primary" : "btn-outline-primary")">Tất cả</a>
+                <a href="/Admin/Report?status=Pending" class="btn @(ViewBag.Status == "Pending" ? "btn-warning text-dark" : "btn-outline-warning text-dark")">Đang chờ</a>
+                <a href="/Admin/Report?status=Resolved" class="btn @(ViewBag.Status == "Resolved" ? "btn-success" : "btn-outline-success")">Đã xử lý</a>
+                <a href="/Admin/Report?status=Rejected" class="btn @(ViewBag.Status == "Rejected" ? "btn-secondary" : "btn-outline-secondary")">Đã bỏ qua</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Loại VP</th>
+                        <th>Đối tượng ID</th>
+                        <th>Lý do</th>
+                        <th>Người báo cáo</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>#@item.ReportId</td>
+                            <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i class="fas fa-layer-group me-1"></i>Bộ từ vựng</span></td>
+                            <td>
+                                <a href="/Admin/VocabularySet/Details/@item.SetId" class="text-decoration-none fw-bold" target="_blank">Set #@item.SetId <i class="fas fa-external-link-alt ms-1 small"></i></a>
+                            </td>
+                            <td><span class="text-danger fw-semibold">@item.Reason</span></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="@(item.Reporter?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={item.Reporter?.FullName}&background=random")" class="rounded-circle me-2" width="24" height="24" alt="">
+                                    <small>@item.Reporter?.FullName</small>
+                                </div>
+                            </td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (item.Status == "Pending")
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ xử lý</span>
+                                }
+                                else if (item.Status == "Resolved")
+                                {
+                                    <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã xử lý</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary"><i class="fas fa-times me-1"></i>Bỏ qua</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (item.Status == "Pending")
+                                {
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Xử lý
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                                            <li>
+                                                <form action="/Admin/Report/Resolve" method="post">
+                                                    <input type="hidden" name="id" value="@item.ReportId" />
+                                                    <input type="hidden" name="actionType" value="delete_item" />
+                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Sẽ xóa bộ từ vựng vi phạm. Bạn chắc chứ?');"><i class="fas fa-ban me-2"></i>Chấp nhận & Xóa bộ từ</button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form action="/Admin/Report/Reject" method="post">
+                                                    <input type="hidden" name="id" value="@item.ReportId" />
+                                                    <button type="submit" class="dropdown-item" onclick="return confirm('Từ chối báo cáo (Không có vi phạm)?');"><i class="fas fa-times me-2 text-secondary"></i>Từ chối báo cáo</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-light border text-muted" disabled>Đã xong</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fas fa-shield-check fs-1 mb-3 text-success opacity-50"></i>
+                                <p>Tuyệt vời! Không có báo cáo vi phạm nào.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="/Admin/Report?page=@i&status=@ViewBag.Status">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

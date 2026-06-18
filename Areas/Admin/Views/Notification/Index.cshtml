@@ -1,0 +1,70 @@
+@model IEnumerable<LexiLearn.Models.Notification>
+@{
+    ViewData["Title"] = "Quản lý Thông báo";
+}
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white pt-4 pb-3 border-bottom-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Lịch sử gửi Thông báo</h5>
+        <a href="/Admin/Notification/Create" class="btn btn-primary"><i class="fas fa-paper-plane me-2"></i>Gửi Thông báo mới</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tiêu đề</th>
+                        <th>Nội dung</th>
+                        <th>Loại</th>
+                        <th>Đối tượng</th>
+                        <th>Người gửi</th>
+                        <th>Thời gian</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><strong class="text-primary">@item.Title</strong></td>
+                            <td style="max-width: 300px;" class="text-truncate" title="@item.Content">@item.Content</td>
+                            <td>
+                                @if (item.Type == "Warning")
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Cảnh báo</span>
+                                }
+                                else if (item.Type == "Promo")
+                                {
+                                    <span class="badge bg-success"><i class="fas fa-gift me-1"></i>Khuyến mãi</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info text-dark"><i class="fas fa-info-circle me-1"></i>Hệ thống</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Đã gửi</span>
+                            </td>
+                            <td>@item.CreatedBy?.FullName</td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <form action="/Admin/Notification/Delete" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@item.NotificationId" />
+                                    <button type="submit" class="btn btn-sm btn-light text-danger border" onclick="return confirm('Thu hồi thông báo này? Người dùng sẽ không thấy nó nữa.');">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">Chưa có thông báo nào được gửi.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

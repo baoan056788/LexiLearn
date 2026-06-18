@@ -1,0 +1,132 @@
+@model LexiLearn.Models.VocabularySet
+@{
+    ViewData["Title"] = "Chi tiết Bộ từ: " + Model.Title;
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h3 class="fw-bold mb-0">@Model.Title</h3>
+                    <div>
+                        @if (Model.IsPublic)
+                        {
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 fs-6">Công khai</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 fs-6">Riêng tư</span>
+                        }
+                    </div>
+                </div>
+                
+                <p class="text-muted mb-4 fs-5">@(Model.Description ?? "Không có mô tả cho bộ từ này.")</p>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="bg-light rounded-3 p-3 d-flex align-items-center">
+                            <i class="fas fa-folder text-primary fs-3 me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Danh mục</small>
+                                <strong>@Model.Category?.CategoryName</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="bg-light rounded-3 p-3 d-flex align-items-center">
+                            <i class="fas fa-layer-group text-success fs-3 me-3"></i>
+                            <div>
+                                <small class="text-muted d-block">Số lượng thẻ</small>
+                                <strong>@Model.Cards?.Count thẻ</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center mt-auto pt-3 border-top">
+                    <img src="@(Model.User?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={Model.User?.FullName}&background=random")" class="rounded-circle me-3" width="48" height="48" alt="">
+                    <div>
+                        <div class="fw-bold">@Model.User?.FullName</div>
+                        <small class="text-muted">Người tạo &bull; @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                    </div>
+                    <a href="/Admin/User/Details/@Model.UserId" class="btn btn-sm btn-outline-secondary ms-auto">Xem người dùng</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-header bg-white pt-4 pb-3 border-bottom-0">
+                <h5 class="fw-bold mb-0">Hành động Quản trị</h5>
+            </div>
+            <div class="card-body d-flex flex-column gap-3">
+                <form action="/Admin/VocabularySet/ToggleVisibility" method="post">
+                    <input type="hidden" name="id" value="@Model.SetId" />
+                    @if (Model.IsPublic)
+                    {
+                        <button type="submit" class="btn btn-warning w-100 py-2" onclick="return confirm('Ẩn bộ từ này sẽ khiến người dùng khác không thể tìm thấy nó. Tiếp tục?');">
+                            <i class="fas fa-eye-slash me-2"></i>Buộc Ẩn Bộ Từ
+                        </button>
+                        <small class="text-muted d-block mt-2 text-center">Dùng khi bộ từ vi phạm quy định cộng đồng</small>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-success w-100 py-2" onclick="return confirm('Bạn có chắc chắn muốn công khai bộ từ này?');">
+                            <i class="fas fa-globe me-2"></i>Buộc Công Khai
+                        </button>
+                    }
+                </form>
+
+                <hr class="my-2" />
+
+                <form action="/Admin/VocabularySet/Delete" method="post">
+                    <input type="hidden" name="id" value="@Model.SetId" />
+                    <button type="submit" class="btn btn-outline-danger w-100 py-2" onclick="return confirm('Xóa bộ từ sẽ xóa toàn bộ thẻ flashcard bên trong và kết quả học tập liên quan. KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn?');">
+                        <i class="fas fa-trash-alt me-2"></i>Xóa Bộ Từ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="fw-bold mb-4 mt-5"><i class="far fa-clone me-2 text-primary"></i>Danh sách Thẻ từ vựng (@Model.Cards?.Count)</h4>
+
+<div class="row g-3">
+    @if (Model.Cards != null && Model.Cards.Any())
+    {
+        @foreach (var card in Model.Cards)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card border shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="fw-bold text-primary mb-0">@card.Term</h5>
+                            @if (!string.IsNullOrEmpty(card.AudioUrl))
+                            {
+                                <button class="btn btn-sm btn-light rounded-circle text-primary" onclick="new Audio('@card.AudioUrl').play()"><i class="fas fa-volume-up"></i></button>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(card.Ipa))
+                        {
+                            <div class="text-muted small mb-2 font-monospace">/@card.Ipa/</div>
+                        }
+                        <p class="mb-2 border-bottom pb-2">@card.Meaning</p>
+                        @if (!string.IsNullOrEmpty(card.Example))
+                        {
+                            <p class="text-muted small fst-italic mb-0">"@card.Example"</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12 text-center py-4 bg-white rounded-3 shadow-sm border-0">
+            <p class="text-muted mb-0">Bộ từ này chưa có thẻ từ vựng nào.</p>
+        </div>
+    }
+</div>

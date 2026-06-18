@@ -1,0 +1,138 @@
+@model LexiLearn.Models.User
+@{
+    ViewData["Title"] = "Chi tiết người dùng: " + Model.FullName;
+}
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body text-center p-4">
+                <img src="@(Model.AvatarUrl ?? $"https://ui-avatars.com/api/?name={Model.FullName}&background=random&size=128")" alt="Avatar" class="rounded-circle mb-3 border shadow-sm" width="120" height="120">
+                <h4 class="fw-bold">@Model.FullName</h4>
+                <p class="text-muted">@Model.Email</p>
+                <div class="mb-3">
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fs-6 px-3 py-2">Hoạt động</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 fs-6 px-3 py-2">Đã khóa</span>
+                    }
+                </div>
+                
+                <form action="/Admin/User/ToggleStatus" method="post" class="mt-4">
+                    <input type="hidden" name="id" value="@Model.UserId" />
+                    @if (Model.IsActive)
+                    {
+                        <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Xác nhận khóa tài khoản này?');"><i class="fas fa-lock me-2"></i>Khóa tài khoản</button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-outline-success w-100" onclick="return confirm('Xác nhận mở khóa tài khoản này?');"><i class="fas fa-unlock me-2"></i>Mở khóa tài khoản</button>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white pt-3 pb-2 border-bottom-0">
+                <h6 class="fw-bold mb-0">Thông tin chi tiết</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-3 text-muted">Mã số:</div>
+                    <div class="col-sm-9 fw-semibold">#@Model.UserId</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3 text-muted">Ngày tham gia:</div>
+                    <div class="col-sm-9 fw-semibold">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3 text-muted">Quyền hạn:</div>
+                    <div class="col-sm-9">
+                        <span class="badge bg-dark">@Model.Role?.RoleName</span>
+                        <a href="#" class="btn btn-sm btn-link text-decoration-none" data-bs-toggle="modal" data-bs-target="#changeRoleModal"><i class="fas fa-edit"></i> Đổi quyền</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white pt-3 pb-2 d-flex justify-content-between align-items-center border-bottom-0">
+                <h6 class="fw-bold mb-0">Bộ từ vựng đã tạo (@Model.VocabularySets?.Count)</h6>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.VocabularySets != null && Model.VocabularySets.Any())
+                {
+                    <div class="list-group list-group-flush rounded-bottom-3">
+                        @foreach (var set in Model.VocabularySets)
+                        {
+                            <a href="/Admin/VocabularySet/Details/@set.SetId" class="list-group-item list-group-item-action p-3">
+                                <div class="d-flex w-100 justify-content-between mb-1">
+                                    <h6 class="mb-1 fw-bold">@set.Title</h6>
+                                    <small class="text-muted">@set.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                </div>
+                                <p class="mb-1 text-muted small">@set.Description</p>
+                                <small>
+                                    @if (set.IsPublic)
+                                    {
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Công khai</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25"><i class="fas fa-lock me-1"></i>Riêng tư</span>
+                                    }
+                                </small>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-folder-open fs-1 mb-2 text-light"></i>
+                        <p>Người dùng chưa tạo bộ từ vựng nào.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Đổi Quyền -->
+<div class="modal fade" id="changeRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="/Admin/User/UpdateRole" method="post" class="modal-content">
+            <input type="hidden" name="id" value="@Model.UserId" />
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Đổi quyền người dùng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Chọn vai trò mới cho người dùng <strong>@Model.FullName</strong>:</p>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="newRoleId" id="roleLearner" value="2" @(Model.RoleId == 2 ? "checked" : "")>
+                    <label class="form-check-label" for="roleLearner">
+                        Learner (Người học thông thường)
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="newRoleId" id="roleAdmin" value="1" @(Model.RoleId == 1 ? "checked" : "")>
+                    <label class="form-check-label text-danger" for="roleAdmin">
+                        Admin (Quản trị viên)
+                    </label>
+                </div>
+                <div class="alert alert-warning mt-3 mb-0 small">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Cẩn trọng khi cấp quyền Admin cho người dùng khác!
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</div>

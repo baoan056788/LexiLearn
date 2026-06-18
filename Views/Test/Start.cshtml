@@ -1,0 +1,75 @@
+@model TestStartViewModel
+@{
+    ViewData["Title"] = "Bài Test - " + Model.SetTitle;
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-pen-to-square me-2"></i>Bài kiểm tra</h1>
+        <p class="text-white-50">@Model.SetTitle • @Model.Questions.Count câu hỏi</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form asp-action="Submit" method="post" id="testForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="setId" value="@Model.SetId" />
+
+                @for (int i = 0; i < Model.Questions.Count; i++)
+                {
+                    var q = Model.Questions[i];
+                    <div class="glass-card mb-4 test-question" data-index="@i">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0">
+                                <span class="badge bg-primary-subtle text-primary me-2">Câu @(i + 1)</span>
+                                @q.QuestionText
+                            </h5>
+                        </div>
+
+                        <input type="hidden" name="answers[@i].CardId" value="@q.CardId" />
+
+                        <div class="row g-3">
+                            @{
+                                var options = new[] { q.OptionA, q.OptionB, q.OptionC, q.OptionD };
+                            }
+                            @foreach (var option in options)
+                            {
+                                <div class="col-md-6">
+                                    <label class="test-option w-100">
+                                        <input type="radio" name="answers[@i].UserAnswer" value="@option" class="d-none" />
+                                        <div class="test-option-content">
+                                            <i class="fas fa-circle me-2 option-icon"></i>
+                                            @option
+                                        </div>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary-gradient btn-lg rounded-pill px-5" onclick="return confirm('Bạn chắc chắn muốn nộp bài?')">
+                        <i class="fas fa-paper-plane me-2"></i>Nộp bài
+                    </button>
+                    <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary btn-lg rounded-pill px-4 ms-2">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Highlight selected option
+    document.querySelectorAll('.test-option input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const questionCard = this.closest('.test-question');
+            questionCard.querySelectorAll('.test-option-content').forEach(opt => opt.classList.remove('selected'));
+            this.closest('.test-option').querySelector('.test-option-content').classList.add('selected');
+        });
+    });
+</script>
+}

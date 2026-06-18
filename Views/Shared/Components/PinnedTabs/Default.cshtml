@@ -1,0 +1,46 @@
+@model IEnumerable<LexiLearn.Models.PinnedItem>
+
+@{
+    var items = Model?.ToList() ?? new List<LexiLearn.Models.PinnedItem>();
+    var nonDictItems = items.Where(i => i.ItemType != "Dictionary").ToList();
+    var hasDict = items.Any(i => i.ItemType == "Dictionary");
+}
+
+@if (hasDict)
+{
+    <div id="pinned-dict-tab" class="d-none"></div>
+}
+
+@if (nonDictItems.Any())
+{
+    <div class="pinned-tabs-container bg-light border-bottom">
+        <div class="container d-flex align-items-center py-2 overflow-auto">
+            <span class="text-muted small me-3 fw-bold text-nowrap"><i class="fas fa-thumbtack text-primary me-1"></i>Đã ghim:</span>
+            <div class="d-flex flex-nowrap gap-2">
+                @foreach (var item in nonDictItems)
+                {
+                    <div class="pinned-tab shadow-sm bg-white border rounded-pill d-flex align-items-center px-3 py-1 text-nowrap">
+                        <a href="@item.Url" class="text-decoration-none text-dark fw-semibold small">
+                            @if (item.ItemType == "VocabularySet")
+                            {
+                                <i class="fas fa-layer-group text-success me-1"></i>
+                            }
+                            else if (item.ItemType == "Feature")
+                            {
+                                <i class="fas fa-gamepad text-warning me-1"></i>
+                            }
+                            @item.Title
+                        </a>
+                        <form asp-controller="Pin" asp-action="Unpin" method="post" class="ms-2 mb-0 d-inline-block">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                            <button type="submit" class="btn btn-link btn-sm text-muted p-0 m-0 border-0 ms-1 text-decoration-none hover-danger" title="Bỏ ghim">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

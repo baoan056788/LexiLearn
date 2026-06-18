@@ -1,0 +1,125 @@
+@{
+    ViewData["Title"] = "Dashboard Tổng quan";
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-3 text-primary me-3">
+                    <i class="fas fa-users fs-3"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">Tổng người dùng</h6>
+                    <h3 class="mb-0 fw-bold">@ViewBag.UserCount</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body d-flex align-items-center">
+                <div class="bg-success bg-opacity-10 p-3 rounded-3 text-success me-3">
+                    <i class="fas fa-layer-group fs-3"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">Bộ từ vựng</h6>
+                    <h3 class="mb-0 fw-bold">@ViewBag.SetCount</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body d-flex align-items-center">
+                <div class="bg-info bg-opacity-10 p-3 rounded-3 text-info me-3">
+                    <i class="fas fa-spell-check fs-3"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">Số từ vựng</h6>
+                    <h3 class="mb-0 fw-bold">@ViewBag.CardCount</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body d-flex align-items-center">
+                <div class="bg-danger bg-opacity-10 p-3 rounded-3 text-danger me-3">
+                    <i class="fas fa-flag fs-3"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">Báo cáo chờ xử lý</h6>
+                    <h3 class="mb-0 fw-bold">@ViewBag.PendingReports</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 class="fw-bold mb-0">Hoạt động học tập (7 ngày qua)</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <h2 class="mb-0 fw-bold me-2">@ViewBag.StudySessionsLast7Days</h2>
+                    <span class="text-success small fw-semibold"><i class="fas fa-arrow-up me-1"></i>lượt học</span>
+                </div>
+                <canvas id="studyChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 class="fw-bold mb-0">Hành động nhanh</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/Admin/User" class="btn btn-outline-primary text-start"><i class="fas fa-user-plus me-2"></i>Quản lý Người dùng</a>
+                    <a href="/Admin/Notification" class="btn btn-outline-success text-start"><i class="fas fa-bullhorn me-2"></i>Gửi Thông báo mới</a>
+                    <a href="/Admin/Category" class="btn btn-outline-info text-start"><i class="fas fa-tags me-2"></i>Thêm Danh mục</a>
+                    <a href="/Admin/Report" class="btn btn-outline-danger text-start"><i class="fas fa-shield-alt me-2"></i>Kiểm duyệt Báo cáo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const ctx = document.getElementById('studyChart').getContext('2d');
+        const studyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+                datasets: [{
+                    label: 'Lượt học',
+                    data: [12, 19, 15, 25, 22, 30, 28], // Demo data
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [2, 2] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+}

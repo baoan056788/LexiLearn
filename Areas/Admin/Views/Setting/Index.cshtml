@@ -1,0 +1,40 @@
+@model IEnumerable<LexiLearn.Models.SystemSetting>
+@{
+    ViewData["Title"] = "Cài đặt Hệ thống";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white pt-4 pb-3 border-bottom-0">
+                <h5 class="fw-bold mb-0">Cấu hình Website</h5>
+            </div>
+            <div class="card-body p-4">
+                <form action="/Admin/Setting/Update" method="post">
+                    @foreach (var item in Model)
+                    {
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">@item.Description <span class="text-muted fw-normal small">(Key: @item.SettingKey)</span></label>
+                            @if (item.SettingValue == "true" || item.SettingValue == "false")
+                            {
+                                <select class="form-select" name="settings[@item.SettingKey]">
+                                    <option value="true" selected="@(item.SettingValue == "true")">Bật</option>
+                                    <option value="false" selected="@(item.SettingValue == "false")">Tắt</option>
+                                </select>
+                            }
+                            else
+                            {
+                                <input type="text" class="form-control" name="settings[@item.SettingKey]" value="@item.SettingValue">
+                            }
+                            <div class="form-text mt-1 text-muted small">Cập nhật lần cuối: @item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    }
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold"><i class="fas fa-save me-2"></i>Lưu cấu hình</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,75 @@
+@model List<LexiLearn.Models.Report>
+@{
+    ViewData["Title"] = "Quản lý Báo cáo";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Ngày báo cáo</th>
+                    <th>Người báo cáo</th>
+                    <th>Bộ từ vi phạm</th>
+                    <th>Lý do</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var report in Model)
+                {
+                    <tr>
+                        <td>@report.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@report.Reporter?.FullName</td>
+                        <td>
+                            <a href="/VocabularySet/Details/@report.SetId" target="_blank" class="text-decoration-none">
+                                @report.VocabularySet?.Title <i class="fas fa-external-link-alt small ms-1"></i>
+                            </a>
+                        </td>
+                        <td>@report.Reason</td>
+                        <td>
+                            @if (report.Status == "Pending")
+                            {
+                                <span class="badge bg-warning">Chờ xử lý</span>
+                            }
+                            else if (report.Status == "Resolved")
+                            {
+                                <span class="badge bg-success">Đã xử lý</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Đã bỏ qua</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (report.Status == "Pending")
+                            {
+                                <form asp-action="ResolveReport" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@report.ReportId" />
+                                    
+                                    <input type="hidden" name="status" value="Resolved" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success mb-1" onclick="return confirm('Đánh dấu đã xử lý?')">Đã xử lý</button>
+                                </form>
+                                <form asp-action="ResolveReport" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@report.ReportId" />
+                                    <input type="hidden" name="status" value="Dismissed" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary mb-1" onclick="return confirm('Bỏ qua báo cáo này?')">Bỏ qua</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Chưa có báo cáo nào.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

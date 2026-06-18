@@ -1,0 +1,64 @@
+@model List<LexiLearn.Models.Category>
+@{
+    ViewData["Title"] = "Quản lý Danh mục";
+    Layout = "_AdminLayout";
+}
+
+<div class="row">
+    <!-- List Categories -->
+    <div class="col-md-8">
+        <div class="admin-card">
+            <h5 class="fw-bold mb-4">Danh sách danh mục</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên danh mục</th>
+                            <th>Mô tả</th>
+                            <th>Số bộ từ</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cat in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@cat.CategoryName</td>
+                                <td>@cat.Description</td>
+                                <td>@cat.VocabularySets.Count</td>
+                                <td class="text-end">
+                                    <form asp-action="DeleteCategory" method="post" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa danh mục này?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@cat.CategoryId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" @(cat.VocabularySets.Any() ? "disabled" : "")>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category -->
+    <div class="col-md-4">
+        <div class="admin-card">
+            <h5 class="fw-bold mb-4">Thêm danh mục mới</h5>
+            <form asp-action="CreateCategory" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                    <input type="text" name="categoryName" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mô tả</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Thêm danh mục</button>
+            </form>
+        </div>
+    </div>
+</div>

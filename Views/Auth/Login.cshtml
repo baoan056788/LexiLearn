@@ -1,0 +1,58 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_Layout";
+}
+
+<div class="auth-page">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-5">
+                <div class="auth-card">
+                    <div class="text-center mb-4">
+                        <div class="auth-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <h2 class="fw-bold mt-3">Chào mừng trở lại!</h2>
+                        <p class="text-muted">Đăng nhập để tiếp tục học tập</p>
+                    </div>
+
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]</div>
+                    }
+
+                    <form asp-action="Login" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Email" class="form-control" placeholder="email" id="loginEmail" />
+                            <label for="loginEmail"><i class="fas fa-envelope me-2"></i>Email</label>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Password" class="form-control" placeholder="password" id="loginPassword" />
+                            <label for="loginPassword"><i class="fas fa-lock me-2"></i>Mật khẩu</label>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input asp-for="RememberMe" class="form-check-input" id="rememberMe" />
+                            <label class="form-check-label" for="rememberMe">Ghi nhớ đăng nhập</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary-gradient w-100 py-3 fw-semibold">
+                            <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">Chưa có tài khoản? <a href="/Auth/Register" class="text-primary fw-semibold">Đăng ký ngay</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

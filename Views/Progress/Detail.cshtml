@@ -1,0 +1,71 @@
+@model Progress
+@{
+    ViewData["Title"] = "Tiến độ - " + (Model?.VocabularySet?.Title ?? "");
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-chart-line me-2"></i>Tiến độ chi tiết</h1>
+        <p class="text-white-50">@Model?.VocabularySet?.Title</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    @if (Model != null)
+    {
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="glass-card mb-4 text-center">
+                    <h3 class="fw-bold mb-4">Độ thành thạo</h3>
+                    <div class="progress mb-3" style="height: 20px; border-radius: 10px;">
+                        <div class="progress-bar bg-gradient-primary" style="width: @Model.MasteryPercent%">
+                            @Model.MasteryPercent%
+                        </div>
+                    </div>
+                    <p class="text-muted">Cập nhật lần cuối: @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="stat-card bg-success-subtle text-center h-100">
+                            <h3 class="text-success fw-bold">@Model.LearnedCards</h3>
+                            <p class="text-muted mb-0">Từ đã thuộc</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card bg-warning-subtle text-center h-100">
+                            <h3 class="text-warning fw-bold">@Model.ReviewingCards</h3>
+                            <p class="text-muted mb-0">Từ đang học/cần ôn</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card bg-primary-subtle text-center h-100">
+                            <h3 class="text-primary fw-bold">@Model.TotalCards</h3>
+                            <p class="text-muted mb-0">Tổng số thẻ</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-5">
+                    <a href="/Study/Flashcard/@Model.SetId" class="btn btn-primary-gradient rounded-pill px-4 me-2">
+                        <i class="fas fa-clone me-2"></i>Học tiếp
+                    </a>
+                    <a href="/Test/Start/@Model.SetId" class="btn btn-outline-primary rounded-pill px-4 me-2">
+                        <i class="fas fa-pen-to-square me-2"></i>Làm bài Test
+                    </a>
+                    <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill px-4">
+                        Chi tiết bộ từ
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <h4 class="text-muted">Chưa có dữ liệu tiến độ</h4>
+            <p class="text-muted">Hãy học bộ từ này để ghi nhận tiến độ!</p>
+            <button onclick="history.back()" class="btn btn-primary-gradient rounded-pill px-4 mt-2">Quay lại</button>
+        </div>
+    }
+</div>

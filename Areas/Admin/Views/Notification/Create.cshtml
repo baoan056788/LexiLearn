@@ -1,0 +1,70 @@
+@{
+    ViewData["Title"] = "Gửi Thông báo mới";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white pt-4 pb-3 border-bottom-0">
+                <h5 class="fw-bold mb-0">Tạo thông báo</h5>
+            </div>
+            <div class="card-body p-4">
+                <form action="/Admin/Notification/Create" method="post">
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tiêu đề thông báo <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" required placeholder="Nhập tiêu đề...">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nội dung <span class="text-danger">*</span></label>
+                        <textarea name="message" class="form-control" rows="4" required placeholder="Nhập nội dung thông báo..."></textarea>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Loại thông báo</label>
+                            <select name="type" class="form-select">
+                                <option value="System">Hệ thống (Tin tức, cập nhật)</option>
+                                <option value="Warning">Cảnh báo (Vi phạm, nhắc nhở)</option>
+                                <option value="Promo">Khuyến mãi (Sự kiện)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Gửi đến</label>
+                            <select name="targetType" class="form-select" id="targetTypeSelect" onchange="toggleTargetInput()">
+                                <option value="All">Tất cả người dùng</option>
+                                <option value="Specific">Người dùng cụ thể</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 d-none" id="specificUserInput">
+                        <label class="form-label fw-bold">ID Người dùng nhận</label>
+                        <input type="number" name="targetUserId" class="form-control" placeholder="Nhập User ID...">
+                        <small class="text-muted">Chỉ người dùng này mới nhận được thông báo.</small>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold"><i class="fas fa-paper-plane me-2"></i>Phát Thông báo</button>
+                        <a href="/Admin/Notification" class="btn btn-light py-2">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleTargetInput() {
+            var val = document.getElementById('targetTypeSelect').value;
+            if (val === 'Specific') {
+                document.getElementById('specificUserInput').classList.remove('d-none');
+            } else {
+                document.getElementById('specificUserInput').classList.add('d-none');
+            }
+        }
+    </script>
+}

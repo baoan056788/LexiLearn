@@ -1,0 +1,35 @@
+# Build output
+bin/
+obj/
+publish/
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+Properties/PublishProfiles/
+
+# ASP.NET / IIS runtime logs
+logs/
+*.log
+stdout*
+
+# Local settings and secrets
+appsettings.Local.json
+appsettings.Production.json
+secrets.json
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Test / coverage artifacts
+TestResults/
+coverage/
+*.coverage
+*.coveragexml

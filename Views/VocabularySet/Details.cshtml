@@ -1,0 +1,192 @@
+@model VocabularySet
+@{
+    ViewData["Title"] = Model.Title;
+    var isOwner = (bool)(ViewBag.IsOwner ?? false);
+}
+
+<section class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="mb-2">
+                    <span class="badge bg-white text-primary">@(Model.Category?.CategoryName ?? "Chưa phân loại")</span>
+                    @if (Model.IsPublic)
+                    {
+                        <span class="badge bg-success"><i class="fas fa-globe me-1"></i>Công khai</span>
+                    }
+                </div>
+                <h1 class="fw-bold text-white">@Model.Title</h1>
+                <p class="text-white-50">@(Model.Description ?? "Không có mô tả") • <i class="fas fa-user me-1"></i>@Model.User?.FullName • @Model.Cards.Count thẻ từ</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <form asp-controller="Pin" asp-action="TogglePin" method="post" class="mb-0">
+                    <input type="hidden" name="itemType" value="VocabularySet" />
+                    <input type="hidden" name="itemId" value="@Model.SetId" />
+                    <input type="hidden" name="title" value="@Model.Title" />
+                    <input type="hidden" name="url" value="/VocabularySet/Details/@Model.SetId" />
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                    <button type="submit" class="btn btn-outline-primary shadow-sm" title="Ghim bộ từ này">
+                        <i class="fas fa-thumbtack"></i> Ghim
+                    </button>
+                </form>
+                @if (isOwner)
+                {
+                    <a href="/VocabularySet/Edit/@Model.SetId" class="btn btn-light rounded-pill px-3">
+                        <i class="fas fa-edit me-1"></i>Sửa
+                    </a>
+                    <form asp-action="Delete" asp-controller="VocabularySet" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa bộ từ này?')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.SetId" />
+                        <button type="submit" class="btn btn-danger rounded-pill px-3">
+                            <i class="fas fa-trash me-1"></i>Xóa
+                        </button>
+                    </form>
+                }
+                else if (Model.IsPublic)
+                {
+                    <form asp-action="Copy" asp-controller="VocabularySet" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.SetId" />
+                        <button type="submit" class="btn btn-light rounded-pill px-3">
+                            <i class="fas fa-copy me-1"></i>Sao chép bộ từ
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-4">
+    <!-- Study Actions -->
+    <div class="mb-4">
+        <h5 class="fw-bold mb-3"><i class="fas fa-graduation-cap me-2"></i>Chế độ học</h5>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <a href="/Study/Flashcard/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #667eea;"><i class="fas fa-clone"></i></div>
+                        <h5 class="fw-bold text-dark">Flashcard</h5>
+                        <p class="text-muted small mb-0">Lật thẻ học từ, ghi nhớ nhanh chóng</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/Test/Setup/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #667eea;"><i class="fas fa-pen-to-square"></i></div>
+                        <h5 class="fw-bold text-dark">Test</h5>
+                        <p class="text-muted small mb-0">Kiểm tra kiến thức với trắc nghiệm</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/Study/MatchGame/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #667eea;"><i class="fas fa-puzzle-piece"></i></div>
+                        <h5 class="fw-bold text-dark">Match Game</h5>
+                        <p class="text-muted small mb-0">Nối từ tiếng Anh với nghĩa tiếng Việt</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/Learn/Index/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #667eea;"><i class="fas fa-chart-line"></i></div>
+                        <h5 class="fw-bold text-dark">Tiến độ (Learn)</h5>
+                        <p class="text-muted small mb-0">Theo dõi quá trình học tập</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <style>
+            .custom-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+            .custom-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important; }
+        </style>
+    </div>
+
+    <!-- Add Card Form (owner only) -->
+    @if (isOwner)
+    {
+        <div class="glass-card mb-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle me-2"></i>Thêm thẻ từ mới</h5>
+            <form asp-action="Create" asp-controller="VocabularyCard" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="SetId" value="@Model.SetId" />
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" name="Term" class="form-control" placeholder="Từ tiếng Anh *" required />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="Meaning" class="form-control" placeholder="Nghĩa tiếng Việt *" required />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="Ipa" class="form-control" placeholder="Phiên âm IPA" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="Example" class="form-control" placeholder="Ví dụ" />
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary-gradient w-100"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    }
+
+    <!-- Cards List -->
+    <div class="glass-card">
+        <h5 class="fw-bold mb-3"><i class="fas fa-list me-2"></i>Danh sách thẻ từ (@Model.Cards.Count)</h5>
+        @if (Model.Cards.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Từ tiếng Anh</th>
+                            <th>Nghĩa</th>
+                            <th>Phiên âm</th>
+                            <th>Ví dụ</th>
+                            @if (isOwner)
+                            {
+                                <th class="text-end">Thao tác</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int index = 1; }
+                        @foreach (var card in Model.Cards)
+                        {
+                            <tr>
+                                <td>@(index++)</td>
+                                <td class="fw-semibold text-primary">@card.Term</td>
+                                <td>@card.Meaning</td>
+                                <td class="text-muted">@card.Ipa</td>
+                                <td class="text-muted small">@card.Example</td>
+                                @if (isOwner)
+                                {
+                                    <td class="text-end">
+                                        <a href="/VocabularyCard/Edit/@card.CardId" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                                        <form asp-action="Delete" asp-controller="VocabularyCard" method="post" class="d-inline" onsubmit="return confirm('Xóa thẻ từ này?')">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@card.CardId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4">
+                <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                <p class="text-muted">Chưa có thẻ từ nào. Hãy thêm thẻ từ đầu tiên!</p>
+            </div>
+        }
+    </div>
+</div>

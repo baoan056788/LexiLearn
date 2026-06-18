@@ -1,0 +1,72 @@
+@model List<Progress>
+@{
+    ViewData["Title"] = "Tất cả Tiến độ";
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-list-ol me-2"></i>Tất cả tiến độ</h1>
+        <p class="text-white-50">Xem chi tiết tiến độ học tập cho từng bộ từ</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="glass-card">
+                @if (Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bộ từ vựng</th>
+                                    <th>Danh mục</th>
+                                    <th class="text-center">Từ đã thuộc</th>
+                                    <th class="text-center">Đang học</th>
+                                    <th>Độ thành thạo</th>
+                                    <th class="text-end">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var progress in Model)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@progress.VocabularySet?.Title</td>
+                                        <td><span class="badge bg-light text-dark">@(progress.VocabularySet?.Category?.CategoryName ?? "Chưa phân loại")</span></td>
+                                        <td class="text-center text-success fw-bold">@progress.LearnedCards</td>
+                                        <td class="text-center text-warning fw-bold">@progress.ReviewingCards</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height: 6px;">
+                                                    <div class="progress-bar bg-gradient-primary" style="width: @progress.MasteryPercent%"></div>
+                                                </div>
+                                                <small class="fw-semibold" style="width: 40px;">@progress.MasteryPercent%</small>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="/Progress/Detail/@progress.SetId" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                Chi tiết <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Chưa có dữ liệu học tập</h4>
+                        <p class="text-muted">Hãy học một vài bộ từ để thấy tiến độ của bạn tại đây!</p>
+                        <a href="/VocabularySet/MySets" class="btn btn-primary-gradient rounded-pill px-4 mt-2">
+                            <i class="fas fa-layer-group me-2"></i>Bắt đầu học
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

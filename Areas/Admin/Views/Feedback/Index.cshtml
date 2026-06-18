@@ -1,0 +1,103 @@
+@model IEnumerable<LexiLearn.Models.Feedback>
+@{
+    ViewData["Title"] = "Quản lý Phản hồi";
+}
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white pt-4 pb-3 border-bottom-0">
+        <h5 class="fw-bold mb-0">Hộp thư Phản hồi từ Người dùng</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="btn-group" role="group">
+                <a href="/Admin/Feedback" class="btn @(string.IsNullOrEmpty(ViewBag.Status) ? "btn-primary" : "btn-outline-primary")">Tất cả</a>
+                <a href="/Admin/Feedback?status=Pending" class="btn @(ViewBag.Status == "Pending" ? "btn-warning text-dark" : "btn-outline-warning text-dark")">Chưa đọc</a>
+                <a href="/Admin/Feedback?status=Reviewed" class="btn @(ViewBag.Status == "Reviewed" ? "btn-success" : "btn-outline-success")">Đã đọc</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Người gửi</th>
+                        <th>Loại góp ý</th>
+                        <th>Nội dung</th>
+                        <th>Ngày gửi</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="@(item.User?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={item.User?.FullName}&background=random")" class="rounded-circle me-2" width="32" height="32" alt="">
+                                    <div>
+                                        <strong>@item.User?.FullName</strong>
+                                        <div class="small text-muted">@item.User?.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">@item.Subject</span>
+                            </td>
+                            <td style="max-width: 400px;">
+                                <div class="text-wrap">@item.Content</div>
+                            </td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (item.Status == "Pending" || item.Status == "new")
+                                {
+                                    <span class="badge bg-warning text-dark">Chưa đọc</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Đã xem</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (item.Status == "Pending" || item.Status == "new")
+                                {
+                                    <form action="/Admin/Feedback/UpdateStatus" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@item.FeedbackId" />
+                                        <input type="hidden" name="status" value="Reviewed" />
+                                        <button type="submit" class="btn btn-sm btn-success border" title="Đánh dấu đã đọc"><i class="fas fa-check"></i></button>
+                                    </form>
+                                }
+                                <form action="/Admin/Feedback/Delete" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@item.FeedbackId" />
+                                    <button type="submit" class="btn btn-sm btn-light text-danger border" onclick="return confirm('Bạn có chắc muốn xóa phản hồi này?');">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">Không có phản hồi nào.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="/Admin/Feedback?page=@i&status=@ViewBag.Status">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

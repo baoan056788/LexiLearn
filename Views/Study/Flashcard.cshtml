@@ -1,0 +1,247 @@
+@model VocabularySet
+@{
+    ViewData["Title"] = "Flashcard - " + Model.Title;
+}
+
+<section class="page-header">
+    <div class="container">
+        <h1 class="fw-bold text-white"><i class="fas fa-clone me-2"></i>Flashcard</h1>
+        <p class="text-white-50">@Model.Title • @Model.Cards.Count thẻ từ</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Progress bar -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted" id="cardCounter">1 / @Model.Cards.Count</span>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-success-subtle text-success" id="knownCount">
+                        <i class="fas fa-check me-1"></i>Đã thuộc: 0
+                    </span>
+                    <span class="badge bg-warning-subtle text-warning" id="learningCount">
+                        <i class="fas fa-redo me-1"></i>Cần học: 0
+                    </span>
+                </div>
+            </div>
+            <div class="progress mb-4" style="height: 6px;">
+                <div class="progress-bar bg-gradient-primary" id="progressBar" style="width: 0%"></div>
+            </div>
+
+            <!-- Flashcard -->
+            <div class="flashcard-container" id="flashcardContainer">
+                <div class="flashcard" id="flashcard" onclick="flipCard()">
+                    <div class="flashcard-front">
+                        <div class="flashcard-content">
+                            <h2 class="term-text" id="termText"></h2>
+                            <p class="ipa-text" id="ipaText"></p>
+                        </div>
+                        <p class="flip-hint"><i class="fas fa-sync-alt me-1"></i>Nhấn để lật thẻ</p>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="flashcard-content">
+                            <h3 class="meaning-text" id="meaningText"></h3>
+                            <p class="example-text" id="exampleText"></p>
+                        </div>
+                        <p class="flip-hint"><i class="fas fa-sync-alt me-1"></i>Nhấn để lật lại</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="d-flex justify-content-center gap-3 mt-4" id="cardControls">
+                <button class="btn btn-danger btn-lg rounded-pill px-4" onclick="markCard(false)" id="btnNotKnown">
+                    <i class="fas fa-times me-2"></i>Chưa thuộc
+                </button>
+                <button class="btn btn-outline-secondary btn-lg rounded-circle" onclick="prevCard()" id="btnPrev">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-lg rounded-circle" onclick="nextCardOnly()" id="btnNext">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-success btn-lg rounded-pill px-4" onclick="markCard(true)" id="btnKnown">
+                    <i class="fas fa-check me-2"></i>Đã thuộc
+                </button>
+            </div>
+
+            <!-- Results (hidden initially) -->
+            <div class="glass-card mt-4 d-none" id="resultsSection" style="max-width: 900px; margin: auto;">
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                    <h2 class="fw-bold mb-0">Tuyệt vời! Bạn đã gần tới đích.</h2>
+                    <div style="font-size: 3rem;">🎉</div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <h5 class="fw-bold text-muted mb-4">Tiến độ của bạn</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="position-relative me-4">
+                                <!-- CSS Donut Chart -->
+                                <div id="donutChart" style="width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#20c997 0% 70%, #ffc107 70% 100%); display: flex; align-items: center; justify-content: center;">
+                                    <div style="width: 90px; height: 90px; border-radius: 50%; background-color: white; display: flex; align-items: center; justify-content: center;">
+                                        <span id="donutPercent" class="fw-bold fs-4 text-secondary">70%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between px-3 py-2 mb-2 rounded" style="background-color: #d1e7dd;">
+                                    <span class="text-success fw-semibold">Đã biết</span>
+                                    <span class="text-success fw-bold" id="finalKnown">29</span>
+                                </div>
+                                <div class="d-flex justify-content-between px-3 py-2 mb-2 rounded" style="background-color: #fff3cd;">
+                                    <span class="text-warning fw-semibold">Đang học</span>
+                                    <span class="text-warning fw-bold" id="finalLearning">11</span>
+                                </div>
+                                <div class="d-flex justify-content-between px-3 py-2 rounded" style="background-color: #f8f9fa;">
+                                    <span class="text-secondary fw-semibold">Còn lại</span>
+                                    <span class="text-secondary fw-bold">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 ps-md-4">
+                        <h5 class="fw-bold text-muted mb-4">Bước tiếp theo</h5>
+                        <a href="/Learn/Index/@Model.SetId" class="btn btn-primary btn-lg rounded-pill w-100 mb-3 fw-bold shadow-sm" style="background: linear-gradient(135deg, #4e54c8, #8f94fb); border: none;">
+                            <i class="fas fa-sync-alt me-2"></i>Ôn luyện với các câu hỏi
+                        </a>
+                        <button class="btn btn-light btn-lg rounded-pill w-100 mb-3 fw-semibold text-secondary shadow-sm" onclick="focusLearning()" id="btnFocusLearning">
+                            Tập trung vào học 11 thẻ
+                        </button>
+                        <div class="text-center mt-3">
+                            <a href="/VocabularySet/Details/@Model.SetId" class="text-muted text-decoration-none fw-semibold">Quay lại bộ từ</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const allCards = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Cards.Select(c => new {
+        cardId = c.CardId,
+        term = c.Term,
+        meaning = c.Meaning,
+        ipa = c.Ipa ?? "",
+        example = c.Example ?? ""
+    })));
+
+    let currentCards = [...allCards];
+    let currentIndex = 0;
+    let results = {};
+    let knownCount = 0;
+    let learningCount = 0;
+
+    function showCard(index) {
+        const card = currentCards[index];
+        document.getElementById('termText').textContent = card.term;
+        document.getElementById('ipaText').textContent = card.ipa;
+        document.getElementById('meaningText').textContent = card.meaning;
+        document.getElementById('exampleText').textContent = card.example;
+        document.getElementById('cardCounter').textContent = `${index + 1} / ${currentCards.length}`;
+        document.getElementById('progressBar').style.width = `${((index + 1) / currentCards.length) * 100}%`;
+
+        // Reset flip
+        document.getElementById('flashcard').classList.remove('flipped');
+    }
+
+    function flipCard() {
+        document.getElementById('flashcard').classList.toggle('flipped');
+    }
+
+    function markCard(isKnown) {
+        const card = currentCards[currentIndex];
+        results[card.cardId] = isKnown;
+
+        if (isKnown) knownCount++;
+        else learningCount++;
+
+        document.getElementById('knownCount').innerHTML = `<i class="fas fa-check me-1"></i>Đã thuộc: ${knownCount}`;
+        document.getElementById('learningCount').innerHTML = `<i class="fas fa-redo me-1"></i>Cần học: ${learningCount}`;
+
+        if (currentIndex < currentCards.length - 1) {
+            currentIndex++;
+            showCard(currentIndex);
+        } else {
+            showResults();
+        }
+    }
+
+    function nextCardOnly() {
+        if (currentIndex < currentCards.length - 1) {
+            currentIndex++;
+            showCard(currentIndex);
+        }
+    }
+
+    function prevCard() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            showCard(currentIndex);
+        }
+    }
+
+    function showResults() {
+        document.getElementById('flashcardContainer').classList.add('d-none');
+        document.getElementById('cardControls').classList.add('d-none');
+        document.getElementById('resultsSection').classList.remove('d-none');
+        
+        document.getElementById('finalKnown').textContent = knownCount;
+        document.getElementById('finalLearning').textContent = learningCount;
+        
+        let percent = 0;
+        if (currentCards.length > 0) {
+            percent = Math.round((knownCount / currentCards.length) * 100);
+        }
+        
+        document.getElementById('donutPercent').textContent = percent + '%';
+        document.getElementById('donutChart').style.background = `conic-gradient(#20c997 0% ${percent}%, #ffc107 ${percent}% 100%)`;
+        
+        document.getElementById('btnFocusLearning').textContent = `Tập trung vào học ${learningCount} thẻ chưa thuộc`;
+        if (learningCount === 0) {
+            document.getElementById('btnFocusLearning').classList.add('d-none');
+        } else {
+            document.getElementById('btnFocusLearning').classList.remove('d-none');
+        }
+
+        // Save results
+        fetch('/Study/SaveFlashcardResult', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                setId: @Model.SetId,
+                results: Object.entries(results).map(([cardId, isKnown]) => ({ cardId: parseInt(cardId), isKnown }))
+            })
+        });
+    }
+
+    function focusLearning() {
+        currentCards = currentCards.filter(c => results[c.cardId] === false);
+        resetState();
+    }
+
+    function restartFlashcard() {
+        currentCards = [...allCards];
+        resetState();
+    }
+
+    function resetState() {
+        currentIndex = 0;
+        results = {};
+        knownCount = 0;
+        learningCount = 0;
+        document.getElementById('knownCount').innerHTML = '<i class="fas fa-check me-1"></i>Đã thuộc: 0';
+        document.getElementById('learningCount').innerHTML = '<i class="fas fa-redo me-1"></i>Cần học: 0';
+        document.getElementById('flashcardContainer').classList.remove('d-none');
+        document.getElementById('cardControls').classList.remove('d-none');
+        document.getElementById('resultsSection').classList.add('d-none');
+        if (currentCards.length > 0) showCard(0);
+    }
+
+    // Initialize
+    if (currentCards.length > 0) showCard(0);
+</script>
+}

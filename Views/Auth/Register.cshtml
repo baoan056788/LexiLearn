@@ -1,0 +1,60 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = "_Layout";
+}
+
+<div class="auth-page">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-5">
+                <div class="auth-card">
+                    <div class="text-center mb-4">
+                        <div class="auth-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h2 class="fw-bold mt-3">Tạo tài khoản</h2>
+                        <p class="text-muted">Bắt đầu hành trình học từ vựng!</p>
+                    </div>
+
+                    <form asp-action="Register" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="FullName" class="form-control" placeholder="name" id="regName" />
+                            <label for="regName"><i class="fas fa-user me-2"></i>Họ và tên</label>
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Email" class="form-control" placeholder="email" id="regEmail" />
+                            <label for="regEmail"><i class="fas fa-envelope me-2"></i>Email</label>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Password" class="form-control" placeholder="password" id="regPassword" />
+                            <label for="regPassword"><i class="fas fa-lock me-2"></i>Mật khẩu</label>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <input asp-for="ConfirmPassword" class="form-control" placeholder="confirm" id="regConfirm" />
+                            <label for="regConfirm"><i class="fas fa-lock me-2"></i>Xác nhận mật khẩu</label>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary-gradient w-100 py-3 fw-semibold">
+                            <i class="fas fa-user-plus me-2"></i>Đăng ký
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">Đã có tài khoản? <a href="/Auth/Login" class="text-primary fw-semibold">Đăng nhập</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
