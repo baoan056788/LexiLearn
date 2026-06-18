@@ -47,6 +47,7 @@ builder.Services.AddScoped<StudyService>();
 builder.Services.AddScoped<TestService>();
 builder.Services.AddScoped<ProgressService>();
 builder.Services.AddScoped<ReviewService>();
+builder.Services.AddHttpClient<GeminiDictionaryService>();
 
 var app = builder.Build();
 

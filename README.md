@@ -11,6 +11,7 @@ LexiLearn là website học từ vựng tiếng Anh xây dựng bằng ASP.NET C
 - Học bằng flashcard và match game.
 - Làm bài test trắc nghiệm, xem kết quả và lịch sử test.
 - Lịch ôn thông minh theo spaced repetition cho từng thẻ và từng người dùng.
+- Tra từ bằng Gemini AI, hỗ trợ nhập tiếng Anh hoặc tiếng Việt, trả về nghĩa, IPA, ví dụ, đồng nghĩa và trái nghĩa.
 - Theo dõi tiến độ học tập, số thẻ đã học, điểm trung bình và streak.
 - Khu vực quản trị cho người dùng, danh mục, bộ từ, phản hồi, thông báo và báo cáo.
 - Tối ưu triển khai IIS bằng publish Release, response compression và ReadyToRun.
@@ -23,6 +24,7 @@ LexiLearn là website học từ vựng tiếng Anh xây dựng bằng ASP.NET C
 - **Authentication:** ASP.NET Core Cookie Authentication
 - **Password hashing:** BCrypt.Net-Next
 - **Excel import:** ExcelDataReader
+- **AI dictionary:** Google Gemini API
 - **Learning algorithm:** Spaced repetition đơn giản dựa trên repetition count, interval days và ease factor
 - **Frontend:** Razor Views, Bootstrap, jQuery, Font Awesome
 - **Web server/deploy:** IIS + ASP.NET Core Hosting Bundle
@@ -73,6 +75,34 @@ Mở `appsettings.json` và chỉnh connection string theo SQL Server trên máy
   }
 }
 ```
+
+## Cấu hình Gemini API
+
+Tính năng tra từ AI dùng Google Gemini API. Bạn có thể lấy API key miễn phí quota tại Google AI Studio:
+
+```text
+https://aistudio.google.com/app/apikey
+```
+
+Khuyến nghị đặt API key bằng biến môi trường để không lộ key trong Git:
+
+```cmd
+setx GEMINI_API_KEY "YOUR_GEMINI_API_KEY"
+```
+
+Sau khi chạy lệnh trên, mở lại terminal hoặc restart IIS để ứng dụng nhận biến môi trường mới.
+
+Có thể cấu hình model trong `appsettings.json`:
+
+```json
+{
+  "Gemini": {
+    "Model": "gemini-2.5-flash"
+  }
+}
+```
+
+Không commit API key thật lên GitHub. Nếu cần cấu hình local bằng file, hãy dùng `appsettings.Local.json` hoặc biến môi trường.
 
 Nếu dùng SQL Login:
 
