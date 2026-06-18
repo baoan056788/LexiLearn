@@ -48,6 +48,7 @@ builder.Services.AddScoped<TestService>();
 builder.Services.AddScoped<ProgressService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddHttpClient<GeminiDictionaryService>();
+builder.Services.AddHttpClient<GeminiChatService>();
 
 var app = builder.Build();
 

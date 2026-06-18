@@ -166,9 +166,14 @@
             </div>
 
             <div id="dictResult" class="d-none">
-                <div class="mb-3">
-                    <h2 class="fw-bold text-primary mb-1 text-capitalize" id="dictWord">word</h2>
-                    <span class="text-muted font-monospace fs-5" id="dictIpa">/wɜːrd/</span>
+                <div class="mb-3 d-flex align-items-start justify-content-between gap-2">
+                    <div>
+                        <h2 class="fw-bold text-primary mb-1 text-capitalize" id="dictWord">word</h2>
+                        <span class="text-muted font-monospace fs-5" id="dictIpa">/wɜːrd/</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary rounded-circle speak-btn" type="button" id="dictSpeakBtn" title="Phát âm">
+                        <i class="fas fa-volume-high"></i>
+                    </button>
                 </div>
                 
                 <div class="mb-4">
@@ -199,6 +204,47 @@
             <div id="dictError" class="d-none alert alert-danger rounded-3 shadow-sm">
                 <i class="fas fa-exclamation-triangle me-2"></i><span id="dictErrorText">Không tìm thấy từ này.</span>
             </div>
+            <hr class="my-4" />
+
+            <section class="ai-chat-panel">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-comments me-2 text-primary"></i>Hỏi AI và lưu lịch sử</h6>
+                    <button class="btn btn-sm btn-outline-primary" type="button" id="aiNewChatBtn" title="Tạo mới">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+
+                <div class="d-flex gap-2 mb-3">
+                    <select class="form-select form-select-sm" id="aiConversationSelect" aria-label="Lịch sử hội thoại">
+                        <option value="">Cuộc trò chuyện mới</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-danger" type="button" id="aiDeleteChatBtn" title="Xóa cuộc trò chuyện">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+
+                <div id="aiChatError" class="alert alert-danger d-none rounded-3 shadow-sm small"></div>
+
+                <div id="aiChatMessages" class="ai-chat-messages mb-3">
+                    <div class="ai-empty-state text-center text-muted py-4">
+                        <i class="fas fa-wand-magic-sparkles fs-2 mb-3 text-primary"></i>
+                        <p class="mb-1 fw-semibold">Hỏi AI về từ vựng, ví dụ, ngữ pháp.</p>
+                        <p class="small mb-0">Lịch sử sẽ được lưu riêng cho tài khoản của bạn.</p>
+                    </div>
+                </div>
+
+                <form id="aiChatForm">
+                    <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                        <textarea id="aiChatInput" class="form-control border-0" rows="2" placeholder="Ví dụ: Phân biệt affect và effect..." required></textarea>
+                        <button class="btn btn-primary-gradient px-3" type="submit" id="aiChatSendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+                <div id="aiChatLoading" class="small text-muted mt-2 d-none">
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Gemini đang trả lời...
+                </div>
+            </section>
         </div>
     </div>
 

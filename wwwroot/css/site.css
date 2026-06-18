@@ -424,6 +424,72 @@ body {
     border-left: 1px solid rgba(0,0,0,0.1);
 }
 
+.speak-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 36px;
+}
+
+.ai-chat-messages {
+    min-height: 220px;
+    max-height: 420px;
+    overflow-y: auto;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 12px;
+}
+
+.ai-message {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.ai-message.user {
+    justify-content: flex-end;
+}
+
+.ai-message.assistant {
+    justify-content: flex-start;
+}
+
+.ai-bubble {
+    max-width: 88%;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.93rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.ai-message.user .ai-bubble {
+    color: #fff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.ai-message.assistant .ai-bubble {
+    color: #1f2937;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+
+.ai-speak-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.ai-speak-word {
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.78rem;
+}
+
 body {
     transition: margin-right 0.3s ease-in-out;
 }

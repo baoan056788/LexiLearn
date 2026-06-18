@@ -196,6 +196,101 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    const dictSpeakBtn = document.getElementById('dictSpeakBtn');
+    if (dictSpeakBtn) {
+        dictSpeakBtn.addEventListener('click', function () {
+            const word = document.getElementById('dictWord')?.textContent?.trim();
+            if (word) speakEnglish(word);
+        });
+    }
+
+    const aiChatForm = document.getElementById('aiChatForm');
+    const aiChatInput = document.getElementById('aiChatInput');
+    const aiChatMessages = document.getElementById('aiChatMessages');
+    const aiConversationSelect = document.getElementById('aiConversationSelect');
+    const aiNewChatBtn = document.getElementById('aiNewChatBtn');
+    const aiDeleteChatBtn = document.getElementById('aiDeleteChatBtn');
+    const aiChatLoading = document.getElementById('aiChatLoading');
+    const aiChatError = document.getElementById('aiChatError');
+    const aiChatSendBtn = document.getElementById('aiChatSendBtn');
+    let currentAiConversationId = null;
+
+    if (aiChatForm && aiChatMessages) {
+        loadAiConversations();
+
+        aiConversationSelect?.addEventListener('change', async function () {
+            const id = parseInt(aiConversationSelect.value, 10);
+            if (!id) {
+                startNewAiConversation();
+                return;
+            }
+
+            currentAiConversationId = id;
+            await loadAiConversation(id);
+        });
+
+        aiNewChatBtn?.addEventListener('click', startNewAiConversation);
+
+        aiDeleteChatBtn?.addEventListener('click', async function () {
+            if (!currentAiConversationId) return;
+
+            aiDeleteChatBtn.disabled = true;
+            clearAiError();
+
+            try {
+                const response = await fetch(`/api/ai/conversations/${currentAiConversationId}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Không xóa được cuộc trò chuyện.');
+                startNewAiConversation();
+                await loadAiConversations();
+            } catch (error) {
+                showAiError(error.message || 'Đã có lỗi xảy ra.');
+            } finally {
+                aiDeleteChatBtn.disabled = false;
+            }
+        });
+
+        aiChatForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const message = aiChatInput.value.trim();
+            if (!message) return;
+
+            appendAiMessage('user', message);
+            aiChatInput.value = '';
+            aiChatLoading?.classList.remove('d-none');
+            clearAiError();
+            if (aiChatSendBtn) aiChatSendBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        conversationId: currentAiConversationId,
+                        message
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error('Vui lòng đăng nhập để dùng AI.');
+                    }
+
+                    throw new Error(data.message || 'Gemini chưa trả lời được. Vui lòng thử lại.');
+                }
+
+                currentAiConversationId = data.conversationId;
+                renderAiMessages(data.messages || []);
+                await loadAiConversations(currentAiConversationId);
+            } catch (error) {
+                showAiError(error.message || 'Đã có lỗi xảy ra.');
+            } finally {
+                aiChatLoading?.classList.add('d-none');
+                if (aiChatSendBtn) aiChatSendBtn.disabled = false;
+            }
+        });
+    }
+
     function hideDictionaryMessages() {
         document.getElementById('dictResult').classList.add('d-none');
         document.getElementById('dictError').classList.add('d-none');
@@ -252,6 +347,134 @@ document.addEventListener("DOMContentLoaded", function () {
         dictSaveMsg.className = `small mt-2 ${className}`;
         dictSaveMsg.innerHTML = success ? `<i class="fas fa-check-circle me-1"></i>${message}` : message;
         dictSaveMsg.classList.remove('d-none');
+    }
+
+    async function loadAiConversations(selectedId = currentAiConversationId) {
+        if (!aiConversationSelect) return;
+
+        try {
+            const response = await fetch('/api/ai/conversations');
+            if (!response.ok) return;
+
+            const conversations = await response.json();
+            aiConversationSelect.innerHTML = '<option value="">Cuộc trò chuyện mới</option>';
+            conversations.forEach(conversation => {
+                const option = document.createElement('option');
+                option.value = conversation.conversationId;
+                option.textContent = conversation.title || `Cuộc trò chuyện #${conversation.conversationId}`;
+                aiConversationSelect.appendChild(option);
+            });
+
+            if (selectedId) {
+                aiConversationSelect.value = String(selectedId);
+            }
+        } catch {
+            // The chat panel stays usable for a new conversation even if history cannot load.
+        }
+    }
+
+    async function loadAiConversation(id) {
+        clearAiError();
+        try {
+            const response = await fetch(`/api/ai/conversations/${id}`);
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.message || 'Không tải được lịch sử.');
+            renderAiMessages(data.messages || []);
+        } catch (error) {
+            showAiError(error.message || 'Đã có lỗi xảy ra.');
+        }
+    }
+
+    function startNewAiConversation() {
+        currentAiConversationId = null;
+        if (aiConversationSelect) aiConversationSelect.value = '';
+        renderAiMessages([]);
+        clearAiError();
+        aiChatInput?.focus();
+    }
+
+    function renderAiMessages(messages) {
+        if (!aiChatMessages) return;
+
+        aiChatMessages.innerHTML = '';
+
+        if (!messages.length) {
+            aiChatMessages.innerHTML = `<div class="ai-empty-state text-center text-muted py-4">
+                <i class="fas fa-wand-magic-sparkles fs-2 mb-3 text-primary"></i>
+                <p class="mb-1 fw-semibold">Hỏi AI về từ vựng, ví dụ, ngữ pháp.</p>
+                <p class="small mb-0">Lịch sử sẽ được lưu riêng cho tài khoản của bạn.</p>
+            </div>`;
+            return;
+        }
+
+        messages.forEach(message => appendAiMessage(message.role, message.content));
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+    }
+
+    function appendAiMessage(role, content) {
+        if (!aiChatMessages) return;
+
+        const emptyState = aiChatMessages.querySelector('.ai-empty-state');
+        if (emptyState) emptyState.remove();
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `ai-message ${role === 'assistant' ? 'assistant' : 'user'}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'ai-bubble';
+        bubble.textContent = content || '';
+        wrapper.appendChild(bubble);
+
+        if (role === 'assistant') {
+            const words = extractEnglishWords(content).slice(0, 6);
+            if (words.length > 0) {
+                const speakList = document.createElement('div');
+                speakList.className = 'ai-speak-words';
+                words.forEach(word => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'btn btn-sm btn-outline-primary ai-speak-word';
+                    button.innerHTML = `<i class="fas fa-volume-high me-1"></i>${escapeHtml(word)}`;
+                    button.addEventListener('click', () => speakEnglish(word));
+                    speakList.appendChild(button);
+                });
+                bubble.appendChild(speakList);
+            }
+        }
+
+        aiChatMessages.appendChild(wrapper);
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+    }
+
+    function extractEnglishWords(text) {
+        const stopWords = new Set(['the', 'and', 'for', 'you', 'are', 'with', 'this', 'that', 'from', 'have', 'will']);
+        const matches = String(text || '').match(/\b[a-zA-Z][a-zA-Z'-]{2,}\b/g) || [];
+        return [...new Set(matches.map(word => word.toLowerCase()))]
+            .filter(word => !stopWords.has(word))
+            .slice(0, 12);
+    }
+
+    function speakEnglish(text) {
+        if (!('speechSynthesis' in window)) {
+            showAiError('Trình duyệt chưa hỗ trợ phát âm.');
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function showAiError(message) {
+        if (!aiChatError) return;
+        aiChatError.textContent = message;
+        aiChatError.classList.remove('d-none');
+    }
+
+    function clearAiError() {
+        aiChatError?.classList.add('d-none');
     }
 
     function escapeHtml(value) {

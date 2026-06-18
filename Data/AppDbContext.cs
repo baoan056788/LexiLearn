@@ -20,6 +20,8 @@ namespace LexiLearn.Data
         public DbSet<Report> Reports { get; set; }
         public DbSet<PinnedItem> PinnedItems { get; set; }
         public DbSet<CardReview> CardReviews { get; set; }
+        public DbSet<AiConversation> AiConversations { get; set; }
+        public DbSet<AiMessage> AiMessages { get; set; }
 
         // New Admin Tables
         public DbSet<Notification> Notifications { get; set; }
@@ -71,6 +73,12 @@ namespace LexiLearn.Data
 
             modelBuilder.Entity<CardReview>()
                 .HasIndex(cr => new { cr.UserId, cr.DueAt });
+
+            modelBuilder.Entity<AiConversation>()
+                .HasIndex(c => new { c.UserId, c.UpdatedAt });
+
+            modelBuilder.Entity<AiMessage>()
+                .HasIndex(m => new { m.AiConversationId, m.CreatedAt });
 
             // Relationships
             modelBuilder.Entity<User>()
@@ -186,6 +194,18 @@ namespace LexiLearn.Data
                 .WithMany(vc => vc.CardReviews)
                 .HasForeignKey(cr => cr.CardId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<AiConversation>()
+                .HasOne(c => c.User)
+                .WithMany(u => u.AiConversations)
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AiMessage>()
+                .HasOne(m => m.Conversation)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(m => m.AiConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.CreatedBy)

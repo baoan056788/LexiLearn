@@ -35,5 +35,6 @@ namespace LexiLearn.Models
         public virtual ICollection<Progress>? Progresses { get; set; }
         public virtual ICollection<PinnedItem>? PinnedItems { get; set; }
         public ICollection<CardReview> CardReviews { get; set; } = new List<CardReview>();
+        public ICollection<AiConversation> AiConversations { get; set; } = new List<AiConversation>();
     }
 }
