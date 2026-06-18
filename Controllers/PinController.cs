@@ -19,6 +19,23 @@ namespace LexiLearn.Controllers
 
         private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
+        private IActionResult RedirectSafely(string? returnUrl, PinnedItem? pin = null)
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl)
+                && Url.IsLocalUrl(returnUrl)
+                && !returnUrl.StartsWith("/Test/Start", StringComparison.OrdinalIgnoreCase))
+            {
+                return Redirect(returnUrl);
+            }
+
+            if (pin?.ItemType == "VocabularySet" && pin.ItemId.HasValue)
+            {
+                return RedirectToAction("Details", "VocabularySet", new { id = pin.ItemId.Value });
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> TogglePin(string itemType, int? itemId, string title, string url, string returnUrl)
@@ -50,11 +67,7 @@ namespace LexiLearn.Controllers
                 TempData["Success"] = "Đã ghim thành công.";
             }
 
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-            return RedirectToAction("Index", "Home");
+            return RedirectSafely(returnUrl, existingPin);
         }
 
         [HttpPost]
@@ -71,11 +84,7 @@ namespace LexiLearn.Controllers
                 TempData["Success"] = "Đã bỏ ghim.";
             }
 
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-            return RedirectToAction("Index", "Home");
+            return RedirectSafely(returnUrl, pin);
         }
     }
 }

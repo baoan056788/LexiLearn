@@ -53,7 +53,7 @@ namespace LexiLearn.Controllers
             if (answers == null || !answers.Any())
             {
                 TempData["Error"] = "Vui lòng trả lời ít nhất một câu hỏi!";
-                return RedirectToAction("Start", new { id = setId });
+                return RedirectToAction("Setup", new { id = setId });
             }
 
             var result = await _testService.SubmitTestAsync(GetUserId(), setId, answers);
