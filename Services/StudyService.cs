@@ -47,6 +47,21 @@ namespace LexiLearn.Services
                 .ToListAsync();
         }
 
+        public async Task<List<int>> GetDueCardIdsAsync(int userId, int setId)
+        {
+            var today = DateTime.Today;
+
+            return await _context.CardReviews
+                .AsNoTracking()
+                .Where(cr => cr.UserId == userId
+                    && cr.DueAt <= today
+                    && cr.VocabularyCard!.SetId == setId)
+                .OrderBy(cr => cr.DueAt)
+                .ThenBy(cr => cr.CardId)
+                .Select(cr => cr.CardId)
+                .ToListAsync();
+        }
+
         public async Task SaveStudyResultAsync(int sessionId, int cardId, bool isCorrect, string status)
         {
             var result = new StudyResult
@@ -78,6 +93,7 @@ namespace LexiLearn.Services
             }
 
             session.EndedAt = DateTime.Now;
+            await UpdateCardReviewsAsync(userId, cardResults);
             await _context.SaveChangesAsync();
 
             // Update progress
@@ -98,6 +114,56 @@ namespace LexiLearn.Services
             await _context.SaveChangesAsync();
 
             await UpdateProgressAsync(userId, setId);
+        }
+
+        public async Task UpdateCardReviewsAsync(int userId, Dictionary<int, bool> cardResults)
+        {
+            if (!cardResults.Any()) return;
+
+            var cardIds = cardResults.Keys.ToList();
+            var existingReviews = await _context.CardReviews
+                .Where(cr => cr.UserId == userId && cardIds.Contains(cr.CardId))
+                .ToDictionaryAsync(cr => cr.CardId);
+
+            foreach (var (cardId, isCorrect) in cardResults)
+            {
+                if (!existingReviews.TryGetValue(cardId, out var review))
+                {
+                    review = new CardReview
+                    {
+                        UserId = userId,
+                        CardId = cardId
+                    };
+                    _context.CardReviews.Add(review);
+                }
+
+                ApplyReviewResult(review, isCorrect);
+            }
+        }
+
+        private static void ApplyReviewResult(CardReview review, bool isCorrect)
+        {
+            if (isCorrect)
+            {
+                review.RepetitionCount++;
+                review.EaseFactor = Math.Min(3.0, review.EaseFactor + 0.15);
+                review.IntervalDays = review.RepetitionCount switch
+                {
+                    1 => 1,
+                    2 => 3,
+                    _ => Math.Max(1, (int)Math.Round(review.IntervalDays * review.EaseFactor))
+                };
+            }
+            else
+            {
+                review.RepetitionCount = 0;
+                review.IntervalDays = 1;
+                review.EaseFactor = Math.Max(1.3, review.EaseFactor - 0.25);
+            }
+
+            review.LastReviewedAt = DateTime.Now;
+            review.DueAt = DateTime.Today.AddDays(review.IntervalDays);
+            review.UpdatedAt = DateTime.Now;
         }
 
         private async Task UpdateProgressAsync(int userId, int setId)

@@ -24,6 +24,7 @@ namespace LexiLearn.Controllers
         public async Task<IActionResult> Flashcard(int id)
         {
             var set = await _context.VocabularySets
+                .AsNoTracking()
                 .Include(s => s.Cards)
                 .Include(s => s.Category)
                 .FirstOrDefaultAsync(s => s.SetId == id);
@@ -35,6 +36,20 @@ namespace LexiLearn.Controllers
                 return RedirectToAction("Details", "VocabularySet", new { id });
             }
 
+            var dueCardIds = await _studyService.GetDueCardIdsAsync(GetUserId(), id);
+            if (dueCardIds.Any())
+            {
+                var dueOrder = dueCardIds
+                    .Select((cardId, index) => new { cardId, index })
+                    .ToDictionary(item => item.cardId, item => item.index);
+
+                set.Cards = set.Cards
+                    .OrderBy(card => dueOrder.TryGetValue(card.CardId, out var index) ? index : int.MaxValue)
+                    .ThenBy(card => card.CardId)
+                    .ToList();
+            }
+
+            ViewBag.DueCardCount = dueCardIds.Count;
             return View(set);
         }
 
@@ -53,6 +68,7 @@ namespace LexiLearn.Controllers
         public async Task<IActionResult> MatchGame(int id)
         {
             var set = await _context.VocabularySets
+                .AsNoTracking()
                 .Include(s => s.Cards)
                 .Include(s => s.Category)
                 .FirstOrDefaultAsync(s => s.SetId == id);

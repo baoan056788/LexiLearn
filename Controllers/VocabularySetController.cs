@@ -96,18 +96,19 @@ namespace LexiLearn.Controllers
                             {
                                 var table = result.Tables[0];
                                 var cards = new List<VocabularyCard>();
+                                var importedTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                                 // Skip first row (header)
                                 for (int i = 1; i < table.Rows.Count; i++)
                                 {
                                     var row = table.Rows[i];
                                     if (row[0] != null && !string.IsNullOrWhiteSpace(row[0].ToString()))
                                     {
-                                        var term = row[0].ToString()!;
-                                        var meaning = table.Columns.Count > 1 && row[1] != null ? row[1].ToString()! : "";
-                                        var ipa = table.Columns.Count > 2 && row[2] != null ? row[2].ToString() : null;
-                                        var example = table.Columns.Count > 3 && row[3] != null ? row[3].ToString() : null;
+                                        var term = row[0].ToString()!.Trim();
+                                        var meaning = table.Columns.Count > 1 && row[1] != null ? row[1].ToString()!.Trim() : "";
+                                        var ipa = table.Columns.Count > 2 && row[2] != null ? row[2].ToString()?.Trim() : null;
+                                        var example = table.Columns.Count > 3 && row[3] != null ? row[3].ToString()?.Trim() : null;
 
-                                        if (!string.IsNullOrWhiteSpace(meaning))
+                                        if (!string.IsNullOrWhiteSpace(meaning) && importedTerms.Add(term))
                                         {
                                             cards.Add(new VocabularyCard
                                             {

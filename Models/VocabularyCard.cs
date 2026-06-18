@@ -34,5 +34,6 @@ namespace LexiLearn.Models
         public VocabularySet? VocabularySet { get; set; }
 
         public ICollection<StudyResult> StudyResults { get; set; } = new List<StudyResult>();
+        public ICollection<CardReview> CardReviews { get; set; } = new List<CardReview>();
     }
 }

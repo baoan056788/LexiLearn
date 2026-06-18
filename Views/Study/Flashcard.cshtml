@@ -17,6 +17,12 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <span class="text-muted" id="cardCounter">1 / @Model.Cards.Count</span>
                 <div class="d-flex gap-2">
+                    @if ((int)(ViewBag.DueCardCount ?? 0) > 0)
+                    {
+                        <span class="badge bg-info-subtle text-info">
+                            <i class="fas fa-calendar-check me-1"></i>Đến hạn ôn: @ViewBag.DueCardCount
+                        </span>
+                    }
                     <span class="badge bg-success-subtle text-success" id="knownCount">
                         <i class="fas fa-check me-1"></i>Đã thuộc: 0
                     </span>

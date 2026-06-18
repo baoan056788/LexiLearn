@@ -34,5 +34,6 @@ namespace LexiLearn.Models
         public virtual ICollection<Test>? Tests { get; set; }
         public virtual ICollection<Progress>? Progresses { get; set; }
         public virtual ICollection<PinnedItem>? PinnedItems { get; set; }
+        public ICollection<CardReview> CardReviews { get; set; } = new List<CardReview>();
     }
 }

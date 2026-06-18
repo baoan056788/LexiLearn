@@ -19,6 +19,7 @@ namespace LexiLearn.Data
         public DbSet<Progress> Progresses { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<PinnedItem> PinnedItems { get; set; }
+        public DbSet<CardReview> CardReviews { get; set; }
 
         // New Admin Tables
         public DbSet<Notification> Notifications { get; set; }
@@ -44,6 +45,32 @@ namespace LexiLearn.Data
             modelBuilder.Entity<Role>()
                 .HasIndex(r => r.RoleName)
                 .IsUnique();
+
+            modelBuilder.Entity<VocabularySet>()
+                .HasIndex(vs => new { vs.IsPublic, vs.CreatedAt });
+
+            modelBuilder.Entity<VocabularySet>()
+                .HasIndex(vs => vs.UserId);
+
+            modelBuilder.Entity<VocabularyCard>()
+                .HasIndex(vc => vc.SetId);
+
+            modelBuilder.Entity<Test>()
+                .HasIndex(t => new { t.UserId, t.CreatedAt });
+
+            modelBuilder.Entity<StudySession>()
+                .HasIndex(ss => new { ss.UserId, ss.StartedAt });
+
+            modelBuilder.Entity<Progress>()
+                .HasIndex(p => new { p.UserId, p.SetId })
+                .IsUnique();
+
+            modelBuilder.Entity<CardReview>()
+                .HasIndex(cr => new { cr.UserId, cr.CardId })
+                .IsUnique();
+
+            modelBuilder.Entity<CardReview>()
+                .HasIndex(cr => new { cr.UserId, cr.DueAt });
 
             // Relationships
             modelBuilder.Entity<User>()
@@ -147,6 +174,18 @@ namespace LexiLearn.Data
                 .WithMany(u => u.PinnedItems)
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CardReview>()
+                .HasOne(cr => cr.User)
+                .WithMany(u => u.CardReviews)
+                .HasForeignKey(cr => cr.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CardReview>()
+                .HasOne(cr => cr.VocabularyCard)
+                .WithMany(vc => vc.CardReviews)
+                .HasForeignKey(cr => cr.CardId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.CreatedBy)

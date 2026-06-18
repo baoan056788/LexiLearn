@@ -8,11 +8,13 @@ namespace LexiLearn.Services
     public class TestService
     {
         private readonly AppDbContext _context;
+        private readonly StudyService _studyService;
         private readonly Random _random = new();
 
-        public TestService(AppDbContext context)
+        public TestService(AppDbContext context, StudyService studyService)
         {
             _context = context;
+            _studyService = studyService;
         }
 
         private static string FormatMeaning(string? value)
@@ -141,6 +143,8 @@ namespace LexiLearn.Services
                 questions.Add(question);
                 _context.TestQuestions.Add(question);
             }
+
+            await _studyService.UpdateCardReviewsAsync(userId, questions.ToDictionary(q => q.CardId, q => q.IsCorrect));
 
             test.Score = answers.Count > 0 ? Math.Round((double)correctCount / answers.Count * 100, 1) : 0;
             await _context.SaveChangesAsync();

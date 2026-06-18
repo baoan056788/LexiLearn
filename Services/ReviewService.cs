@@ -15,7 +15,22 @@ namespace LexiLearn.Services
 
         public async Task<List<VocabularyCard>> GetCardsToReviewAsync(int userId, int setId)
         {
-            // Get cards that were marked as Learning or Review, or answered incorrectly
+            var today = DateTime.Today;
+            var dueCards = await _context.CardReviews
+                .AsNoTracking()
+                .Where(cr => cr.UserId == userId
+                    && cr.DueAt <= today
+                    && cr.VocabularyCard!.SetId == setId)
+                .OrderBy(cr => cr.DueAt)
+                .ThenBy(cr => cr.CardId)
+                .Select(cr => cr.VocabularyCard!)
+                .ToListAsync();
+
+            if (dueCards.Any())
+            {
+                return dueCards;
+            }
+
             var reviewCardIds = await _context.StudyResults
                 .AsNoTracking()
                 .Include(sr => sr.StudySession)
@@ -47,7 +62,22 @@ namespace LexiLearn.Services
 
         public async Task<List<VocabularyCard>> GetAllReviewCardsAsync(int userId)
         {
-            // Get all cards the user has studied that are not marked as "Known"
+            var today = DateTime.Today;
+            var dueCards = await _context.CardReviews
+                .AsNoTracking()
+                .Include(cr => cr.VocabularyCard)
+                    .ThenInclude(card => card!.VocabularySet)
+                .Where(cr => cr.UserId == userId && cr.DueAt <= today)
+                .OrderBy(cr => cr.DueAt)
+                .ThenBy(cr => cr.CardId)
+                .Select(cr => cr.VocabularyCard!)
+                .ToListAsync();
+
+            if (dueCards.Any())
+            {
+                return dueCards;
+            }
+
             var reviewCardIds = await _context.StudyResults
                 .AsNoTracking()
                 .Include(sr => sr.StudySession)

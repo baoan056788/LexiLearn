@@ -10,6 +10,7 @@ LexiLearn là website học từ vựng tiếng Anh xây dựng bằng ASP.NET C
 - Khám phá bộ từ công khai.
 - Học bằng flashcard và match game.
 - Làm bài test trắc nghiệm, xem kết quả và lịch sử test.
+- Lịch ôn thông minh theo spaced repetition cho từng thẻ và từng người dùng.
 - Theo dõi tiến độ học tập, số thẻ đã học, điểm trung bình và streak.
 - Khu vực quản trị cho người dùng, danh mục, bộ từ, phản hồi, thông báo và báo cáo.
 - Tối ưu triển khai IIS bằng publish Release, response compression và ReadyToRun.
@@ -22,6 +23,7 @@ LexiLearn là website học từ vựng tiếng Anh xây dựng bằng ASP.NET C
 - **Authentication:** ASP.NET Core Cookie Authentication
 - **Password hashing:** BCrypt.Net-Next
 - **Excel import:** ExcelDataReader
+- **Learning algorithm:** Spaced repetition đơn giản dựa trên repetition count, interval days và ease factor
 - **Frontend:** Razor Views, Bootstrap, jQuery, Font Awesome
 - **Web server/deploy:** IIS + ASP.NET Core Hosting Bundle
 
@@ -90,6 +92,16 @@ Chạy migration:
 cd /d D:\EL\LexiLearn
 dotnet ef database update
 ```
+
+Migration hiện tại tạo thêm bảng `CardReviews` để lưu lịch ôn từng thẻ:
+
+- `UserId`, `CardId`: xác định thẻ của từng người học.
+- `RepetitionCount`: số lần trả lời đúng liên tiếp.
+- `IntervalDays`: số ngày giãn cách đến lần ôn sau.
+- `EaseFactor`: độ dễ của thẻ, dùng để tăng/giảm interval.
+- `DueAt`: ngày thẻ đến hạn ôn.
+
+Ứng dụng cũng tạo thêm index cho các truy vấn thường dùng như danh sách bộ từ công khai, lịch sử test, phiên học, tiến độ và lịch ôn.
 
 Nếu máy chưa có `dotnet-ef`, cài bằng:
 
@@ -261,4 +273,3 @@ git push -u origin main
 - Không commit mật khẩu SQL thật lên GitHub.
 - Với môi trường production, nên dùng `appsettings.Production.json`, biến môi trường hoặc Secret Manager.
 - Không nên để App Pool chạy bằng `LocalSystem`; hãy dùng `ApplicationPoolIdentity` và cấp quyền SQL đúng cho `IIS APPPOOL\LexiLearn`.
-
