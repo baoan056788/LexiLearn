@@ -125,7 +125,7 @@
     </div>
 
     <!-- Floating Dictionary Button -->
-    <button class="btn btn-primary-gradient rounded-circle shadow-lg dict-fab" type="button" data-bs-toggle="offcanvas" data-bs-target="#dictOffcanvas" aria-controls="dictOffcanvas" title="Tra từ điển">
+    <button class="btn btn-primary-gradient rounded-circle shadow-lg dict-fab" type="button" data-bs-toggle="offcanvas" data-bs-target="#dictOffcanvas" aria-controls="dictOffcanvas" title="Tra từ bằng AI">
         <i class="fas fa-search"></i>
     </button>
 
@@ -133,7 +133,7 @@
     <div class="offcanvas offcanvas-end shadow" tabindex="-1" id="dictOffcanvas" aria-labelledby="dictOffcanvasLabel" data-bs-scroll="true" data-bs-backdrop="false">
         <div class="resize-handle"></div>
         <div class="offcanvas-header bg-light-custom border-bottom">
-            <h5 class="offcanvas-title fw-bold" id="dictOffcanvasLabel"><i class="fas fa-book-open me-2 text-primary"></i>Tra từ điển</h5>
+            <h5 class="offcanvas-title fw-bold" id="dictOffcanvasLabel"><i class="fas fa-wand-magic-sparkles me-2 text-primary"></i>Tra từ AI</h5>
             <div class="d-flex align-items-center">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
@@ -142,7 +142,7 @@
                         <input type="hidden" name="title" value="Từ điển" />
                         <input type="hidden" name="url" value="#" /> <!-- Dictionary doesn't have a specific page, we will handle its tab click via JS or just not have a URL -->
                         <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                        <button type="submit" id="btnPinDict" class="btn btn-sm btn-outline-primary" title="Ghim từ điển vào thanh Tab Bar">
+                        <button type="submit" id="btnPinDict" class="btn btn-sm btn-outline-primary" title="Ghim tra từ AI vào thanh Tab Bar">
                             <i class="fas fa-thumbtack"></i>
                         </button>
                     </form>
@@ -153,7 +153,7 @@
         <div class="offcanvas-body">
             <form id="dictForm" class="mb-4">
                 <div class="input-group shadow-sm rounded-pill overflow-hidden">
-                    <input type="text" id="dictInput" class="form-control border-0 px-4" placeholder="Nhập từ tiếng Anh..." required autocomplete="off">
+                    <input type="text" id="dictInput" class="form-control border-0 px-4" placeholder="Nhập từ tiếng Anh hoặc tiếng Việt..." required autocomplete="off">
                     <button class="btn btn-primary-gradient px-4" type="submit" id="dictSubmitBtn"><i class="fas fa-search"></i></button>
                 </div>
             </form>
@@ -162,7 +162,7 @@
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <p class="text-muted mt-2 small">Đang tìm kiếm...</p>
+                <p class="text-muted mt-2 small">Gemini đang tra từ...</p>
             </div>
 
             <div id="dictResult" class="d-none">
