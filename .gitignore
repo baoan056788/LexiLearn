@@ -33,3 +33,5 @@ TestResults/
 coverage/
 *.coverage
 *.coveragexml
+
+appsettings.Production.json
