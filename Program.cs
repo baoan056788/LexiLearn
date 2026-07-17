@@ -51,6 +51,7 @@ builder.Services.AddScoped<WordParserService>();
 builder.Services.AddHttpClient<GeminiDictionaryService>();
 builder.Services.AddHttpClient<GeminiChatService>();
 builder.Services.AddHttpClient<GeminiVocabExtractService>();
+builder.Services.AddHttpClient<GeminiQuizService>();
 
 var app = builder.Build();
 
