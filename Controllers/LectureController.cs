@@ -30,6 +30,7 @@ namespace LexiLearn.Controllers
             var userId = GetUserId();
             var lectures = await _context.Lectures
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(l => l.Category)
                 .Include(l => l.Course)
                 .Include(l => l.Sections)
@@ -47,6 +48,7 @@ namespace LexiLearn.Controllers
         {
             var query = _context.Lectures
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(l => l.Category)
                 .Include(l => l.User)
                 .Include(l => l.Sections)
@@ -180,6 +182,7 @@ namespace LexiLearn.Controllers
             
             var lecture = await _context.Lectures
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(l => l.Category)
                 .Include(l => l.User)
                 .Include(l => l.Course)
