@@ -49,6 +49,7 @@ builder.Services.AddScoped<ProgressService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddHttpClient<GeminiDictionaryService>();
 builder.Services.AddHttpClient<GeminiChatService>();
+builder.Services.AddHttpClient<GeminiVocabExtractService>();
 
 var app = builder.Build();
 
@@ -61,8 +62,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseResponseCompression();
-app.UseHttpsRedirection();
+
+// Chỉ redirect HTTPS khi có HTTPS port được cấu hình (tránh lỗi khi chạy HTTP trên IIS)
+var httpsPort = builder.Configuration.GetValue<int?>("HTTPS_PORT") ?? builder.Configuration.GetValue<int?>("ASPNETCORE_HTTPS_PORT");
+if (httpsPort.HasValue)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseRouting();
+
 
 app.UseAuthentication();
 app.UseAuthorization();

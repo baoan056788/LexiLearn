@@ -25,13 +25,18 @@ namespace LexiLearn.ViewModels
     public class TestQuestionViewModel
     {
         public int CardId { get; set; }
+        public string QuestionType { get; set; } = "multiple-choice";
+        public string PromptLanguage { get; set; } = string.Empty;
+        public string AnswerLanguage { get; set; } = string.Empty;
         public string QuestionText { get; set; } = string.Empty;
         public string CorrectAnswer { get; set; } = string.Empty;
         public string OptionA { get; set; } = string.Empty;
         public string OptionB { get; set; } = string.Empty;
         public string OptionC { get; set; } = string.Empty;
         public string OptionD { get; set; } = string.Empty;
+        public string? StatementText { get; set; }
         public string? UserAnswer { get; set; }
+        public string? Example { get; set; }
     }
 
     public class TestSubmitViewModel
@@ -43,6 +48,8 @@ namespace LexiLearn.ViewModels
     public class TestAnswerViewModel
     {
         public int CardId { get; set; }
+        public string QuestionText { get; set; } = string.Empty;
+        public string CorrectAnswer { get; set; } = string.Empty;
         public string UserAnswer { get; set; } = string.Empty;
     }
 }

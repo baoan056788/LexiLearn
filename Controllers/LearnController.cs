@@ -21,7 +21,7 @@ namespace LexiLearn.Controllers
         public async Task<IActionResult> Index(int id)
         {
             var set = await _context.VocabularySets
-                .Include(s => s.Cards)
+                .Include(s => s.Cards.Where(c => !c.IsHidden))
                 .FirstOrDefaultAsync(s => s.SetId == id);
 
             if (set == null) return NotFound();

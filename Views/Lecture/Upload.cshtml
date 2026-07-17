@@ -1,0 +1,159 @@
+@model LexiLearn.ViewModels.LectureUploadViewModel
+@{
+    ViewData["Title"] = "Tai len bai giang";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card glass-card">
+                <div class="card-header border-bottom border-secondary bg-transparent py-3">
+                    <h4 class="mb-0 text-white"><i class="fas fa-file-word text-primary me-2"></i> Tai len bai giang Word (.docx)</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Upload" enctype="multipart/form-data" method="post" id="uploadForm">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label text-light">Tieu de bai giang <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control bg-dark text-light border-secondary" placeholder="Nhap tieu de bai giang" />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label text-light">Mo ta</label>
+                            <textarea asp-for="Description" class="form-control bg-dark text-light border-secondary" rows="3" placeholder="Mo ta ngan gon ve noi dung bai giang..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="CategoryId" class="form-label text-light">Danh muc</label>
+                                <select asp-for="CategoryId" class="form-select bg-dark text-light border-secondary">
+                                    <option value="">-- Chon danh muc --</option>
+                                    @foreach (var item in Model.Categories)
+                                    {
+                                        <option value="@item.CategoryId">@item.CategoryName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="CourseId" class="form-label text-light">Khoa hoc (Tuy chon)</label>
+                                <select asp-for="CourseId" class="form-select bg-dark text-light border-secondary">
+                                    <option value="">-- Khong thuoc khoa hoc --</option>
+                                    @foreach (var item in Model.Courses)
+                                    {
+                                        <option value="@item.CourseId">@item.Title</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-light">File Word (.docx) <span class="text-danger">*</span></label>
+                            <div class="upload-area p-4 text-center border border-2 border-dashed border-secondary rounded bg-dark position-relative" id="dropArea">
+                                <input type="file" asp-for="WordFile" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" id="fileInput" />
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h5 class="text-light mb-1">Keo tha file vao day hoac Click de chon</h5>
+                                <p class="text-muted small mb-0" id="fileName">Ho tro dinh dang .docx (Toi da 20MB)</p>
+                            </div>
+                            <span asp-validation-for="WordFile" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-4 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="IsPublic" id="isPublicSwitch">
+                            <label class="form-check-label text-light" for="isPublicSwitch">
+                                <i class="fas fa-globe me-1"></i> Cong khai bai giang nay (Moi nguoi deu co the xem)
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-light">Huy</a>
+                            <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                                <span class="normal-state"><i class="fas fa-upload me-2"></i> Tai len & Xu ly</span>
+                                <span class="loading-state d-none">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    Dang xu ly...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('fileInput');
+            const dropArea = document.getElementById('dropArea');
+            const fileName = document.getElementById('fileName');
+            const form = document.getElementById('uploadForm');
+            const submitBtn = document.getElementById('submitBtn');
+
+            fileInput.addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
+                    const file = this.files[0];
+                    if (!file.name.toLowerCase().endsWith('.docx')) {
+                        alert('Vui long chon file .docx');
+                        this.value = '';
+                        fileName.innerHTML = 'Ho tro dinh dang .docx (Toi da 20MB)';
+                        return;
+                    }
+                    if (file.size > 20 * 1024 * 1024) {
+                        alert('File qua lon. Toi da 20MB.');
+                        this.value = '';
+                        fileName.innerHTML = 'Ho tro dinh dang .docx (Toi da 20MB)';
+                        return;
+                    }
+                    fileName.innerHTML = `<strong class="text-primary"><i class="fas fa-file-word me-1"></i> ${file.name}</strong> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    dropArea.classList.add('border-primary');
+                } else {
+                    fileName.innerHTML = 'Ho tro dinh dang .docx (Toi da 20MB)';
+                    dropArea.classList.remove('border-primary');
+                }
+            });
+
+            // Handle drag & drop visual
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                dropArea.classList.add('border-primary', 'bg-secondary', 'bg-opacity-25');
+            }
+
+            function unhighlight(e) {
+                dropArea.classList.remove('border-primary', 'bg-secondary', 'bg-opacity-25');
+            }
+
+            // Loading state
+            form.addEventListener('submit', function (e) {
+                if ($(this).valid()) {
+                    const normalState = submitBtn.querySelector('.normal-state');
+                    const loadingState = submitBtn.querySelector('.loading-state');
+                    
+                    submitBtn.disabled = true;
+                    normalState.classList.add('d-none');
+                    loadingState.classList.remove('d-none');
+                }
+            });
+        });
+    </script>
+}

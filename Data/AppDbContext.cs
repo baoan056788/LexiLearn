@@ -22,6 +22,7 @@ namespace LexiLearn.Data
         public DbSet<CardReview> CardReviews { get; set; }
         public DbSet<AiConversation> AiConversations { get; set; }
         public DbSet<AiMessage> AiMessages { get; set; }
+        public DbSet<StudyNote> StudyNotes { get; set; }
 
         // New Admin Tables
         public DbSet<Notification> Notifications { get; set; }
@@ -34,6 +35,13 @@ namespace LexiLearn.Data
         public DbSet<WordType> WordTypes { get; set; }
         public DbSet<Synonym> Synonyms { get; set; }
         public DbSet<RelatedWord> RelatedWords { get; set; }
+
+        // Lecture Module Tables
+        public DbSet<Lecture> Lectures { get; set; }
+        public DbSet<LectureSection> LectureSections { get; set; }
+        public DbSet<LectureCourse> LectureCourses { get; set; }
+        public DbSet<UserAnnotation> UserAnnotations { get; set; }
+        public DbSet<LectureQuiz> LectureQuizzes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,6 +87,12 @@ namespace LexiLearn.Data
 
             modelBuilder.Entity<AiMessage>()
                 .HasIndex(m => new { m.AiConversationId, m.CreatedAt });
+
+            modelBuilder.Entity<StudyNote>()
+                .HasIndex(n => new { n.UserId, n.UpdatedAt });
+
+            modelBuilder.Entity<StudyNote>()
+                .HasIndex(n => new { n.UserId, n.IsPinned, n.UpdatedAt });
 
             // Relationships
             modelBuilder.Entity<User>()
@@ -207,6 +221,18 @@ namespace LexiLearn.Data
                 .HasForeignKey(m => m.AiConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<StudyNote>()
+                .HasOne(n => n.User)
+                .WithMany(u => u.StudyNotes)
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StudyNote>()
+                .HasOne(n => n.VocabularySet)
+                .WithMany(vs => vs.StudyNotes)
+                .HasForeignKey(n => n.SetId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.CreatedBy)
                 .WithMany()
@@ -230,6 +256,84 @@ namespace LexiLearn.Data
                 .WithMany()
                 .HasForeignKey(f => f.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+            // === Lecture Module ===
+            modelBuilder.Entity<Lecture>()
+                .HasIndex(l => new { l.UserId, l.CreatedAt });
+
+            modelBuilder.Entity<Lecture>()
+                .HasIndex(l => l.IsPublic);
+
+            modelBuilder.Entity<UserAnnotation>()
+                .HasIndex(a => new { a.UserId, a.LectureId });
+
+            modelBuilder.Entity<LectureQuiz>()
+                .HasIndex(q => q.LectureId);
+
+            modelBuilder.Entity<Lecture>()
+                .HasOne(l => l.User)
+                .WithMany()
+                .HasForeignKey(l => l.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Lecture>()
+                .HasOne(l => l.Category)
+                .WithMany()
+                .HasForeignKey(l => l.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Lecture>()
+                .HasOne(l => l.Course)
+                .WithMany(c => c.Lectures)
+                .HasForeignKey(l => l.CourseId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<LectureSection>()
+                .HasOne(s => s.Lecture)
+                .WithMany(l => l.Sections)
+                .HasForeignKey(s => s.LectureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LectureSection>()
+                .HasOne(s => s.ParentSection)
+                .WithMany(s => s.ChildSections)
+                .HasForeignKey(s => s.ParentSectionId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<LectureCourse>()
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserAnnotation>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserAnnotation>()
+                .HasOne(a => a.Lecture)
+                .WithMany(l => l.Annotations)
+                .HasForeignKey(a => a.LectureId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<UserAnnotation>()
+                .HasOne(a => a.Section)
+                .WithMany()
+                .HasForeignKey(a => a.SectionId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<LectureQuiz>()
+                .HasOne(q => q.Lecture)
+                .WithMany(l => l.Quizzes)
+                .HasForeignKey(q => q.LectureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LectureQuiz>()
+                .HasOne(q => q.Section)
+                .WithMany(s => s.Quizzes)
+                .HasForeignKey(q => q.SectionId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

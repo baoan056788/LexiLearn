@@ -20,13 +20,17 @@
 
                     <div class="mb-3">
                         <label asp-for="Term" class="form-label fw-semibold"></label>
-                        <input asp-for="Term" class="form-control" />
+                        <input asp-for="Term" class="form-control" placeholder="e.g. in the event of, in case of" />
+                        <div class="form-text"><i class="fas fa-info-circle me-1 text-info"></i>Có thể nhập nhiều từ tiếng Anh đồng nghĩa, phân cách bằng dấu phẩy.</div>
                         <span asp-validation-for="Term" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Meaning" class="form-label fw-semibold"></label>
-                        <input asp-for="Meaning" class="form-control" />
+                        <div class="input-group">
+                            <input asp-for="Meaning" id="editMeaning" class="form-control" />
+                            <button type="button" class="btn btn-outline-info" title="Gợi ý từ đồng nghĩa bằng AI" onclick="generateSynonyms('editMeaning', this)"><i class="fas fa-magic"></i> AI</button>
+                        </div>
                         <span asp-validation-for="Meaning" class="text-danger small"></span>
                     </div>
 
@@ -49,3 +53,39 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+async function generateSynonyms(inputId, btnElement) {
+    const input = document.getElementById(inputId);
+    const meaning = input.value.trim();
+    if (!meaning) {
+        alert('Vui lòng nhập nghĩa tiếng Việt trước!');
+        return;
+    }
+    
+    const originalHtml = btnElement.innerHTML;
+    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btnElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/ai/synonyms?meaning=' + encodeURIComponent(meaning));
+        if (response.ok) {
+            const synonyms = await response.json();
+            if (synonyms && synonyms.length > 0) {
+                const currentMeanings = meaning.split(/[,;]/).map(m => m.trim()).filter(m => m);
+                const newMeanings = synonyms.filter(s => !currentMeanings.includes(s.toLowerCase()));
+                if (newMeanings.length > 0) {
+                    input.value = meaning + ', ' + newMeanings.join(', ');
+                }
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        btnElement.innerHTML = originalHtml;
+        btnElement.disabled = false;
+    }
+}
+</script>
+}

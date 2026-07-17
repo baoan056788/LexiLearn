@@ -18,6 +18,7 @@ namespace LexiLearn.Services
             Khi người dùng hỏi phân biệt từ, hãy nêu khác biệt ngữ cảnh dùng và ví dụ.
             Khi người dùng muốn tạo bộ từ, hãy trả về danh sách gồm term, meaning, ipa, example.
             Không bịa nếu không chắc; hãy nói cần thêm ngữ cảnh.
+            Return clean plain text. Avoid markdown symbols like **, #, *, -, or ``` in the final answer.
             """;
 
         private readonly AppDbContext _context;
@@ -168,7 +169,14 @@ namespace LexiLearn.Services
                 throw new GeminiDictionaryException(response.StatusCode, "Gemini chat request failed.");
             }
 
-            return ExtractGeneratedText(responseText).Trim();
+            var reply = ExtractGeneratedText(responseText).Trim();
+            if (string.IsNullOrWhiteSpace(reply))
+            {
+                _logger.LogWarning("Gemini chat returned an empty payload: {Response}", responseText);
+                throw new GeminiDictionaryException(HttpStatusCode.UnprocessableEntity, "Gemini returned an empty reply.");
+            }
+
+            return reply;
         }
 
         private static object BuildContents(List<AiMessage> recentMessages, string userMessage)
@@ -243,20 +251,36 @@ namespace LexiLearn.Services
         private static string ExtractGeneratedText(string responseText)
         {
             using var document = JsonDocument.Parse(responseText);
-            var parts = document.RootElement
-                .GetProperty("candidates")[0]
-                .GetProperty("content")
-                .GetProperty("parts");
-
-            foreach (var part in parts.EnumerateArray())
+            if (!document.RootElement.TryGetProperty("candidates", out var candidates) ||
+                candidates.ValueKind != JsonValueKind.Array ||
+                candidates.GetArrayLength() == 0)
             {
-                if (part.TryGetProperty("text", out var textElement))
+                return string.Empty;
+            }
+
+            foreach (var candidate in candidates.EnumerateArray())
+            {
+                if (!candidate.TryGetProperty("content", out var content) ||
+                    !content.TryGetProperty("parts", out var parts) ||
+                    parts.ValueKind != JsonValueKind.Array)
                 {
-                    return textElement.GetString() ?? "";
+                    continue;
+                }
+
+                foreach (var part in parts.EnumerateArray())
+                {
+                    if (part.TryGetProperty("text", out var textElement))
+                    {
+                        var text = textElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            return text;
+                        }
+                    }
                 }
             }
 
-            return "";
+            return string.Empty;
         }
     }
 }

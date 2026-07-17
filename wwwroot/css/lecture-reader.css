@@ -1,0 +1,203 @@
+:root {
+    --reader-bg: #1e1e24;
+    --reader-text: #e0e0e0;
+    --reader-sidebar: #25252b;
+    --reader-border: #33333d;
+    --reader-highlight: rgba(255, 241, 118, 0.3);
+    --reader-primary: #6366f1;
+    --reader-accent: #8b5cf6;
+}
+
+.lecture-reader-container {
+    display: flex;
+    height: calc(100vh - 70px);
+    overflow: hidden;
+    background: var(--reader-bg);
+    color: var(--reader-text);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    margin-bottom: 2rem;
+}
+
+.lecture-sidebar {
+    width: 300px;
+    background: var(--reader-sidebar);
+    border-right: 1px solid var(--reader-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.lecture-sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--reader-border);
+}
+
+.lecture-sidebar-header h5 {
+    margin: 0;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--reader-primary), var(--reader-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.toc-item {
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.toc-link {
+    color: #aaa;
+    text-decoration: none;
+    display: block;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.toc-link:hover {
+    color: #fff;
+    padding-left: 5px;
+}
+
+.toc-level-1 { padding-left: 20px; font-weight: 600; color: #eee; }
+.toc-level-2 { padding-left: 35px; }
+.toc-level-3 { padding-left: 50px; font-size: 0.85rem; }
+
+.lecture-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px;
+    scroll-behavior: smooth;
+    position: relative;
+}
+
+.lecture-document {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #232329;
+    padding: 50px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    min-height: 100%;
+    line-height: 1.7;
+    font-size: 1.1rem;
+}
+
+.lecture-heading {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+h1.lecture-heading { font-size: 2.2rem; border-bottom: 2px solid var(--reader-primary); padding-bottom: 10px; }
+h2.lecture-heading { font-size: 1.8rem; }
+h3.lecture-heading { font-size: 1.5rem; }
+
+.lecture-paragraph {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+}
+
+.lecture-image-container {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.lecture-image {
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.lecture-table {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    color: #eee;
+    border-color: var(--reader-border);
+}
+
+.lecture-table th {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.lecture-table td, .lecture-table th {
+    padding: 12px;
+}
+
+/* Annotation Toolbar */
+.annotation-toolbar {
+    position: fixed;
+    background: #333;
+    border-radius: 8px;
+    padding: 5px;
+    display: none;
+    gap: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    z-index: 1000;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.annotation-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.annotation-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.color-picker {
+    display: flex;
+    gap: 4px;
+    padding: 0 5px;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    margin-left: 5px;
+}
+
+.color-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    cursor: pointer;
+}
+
+.highlighted-text {
+    background-color: var(--reader-highlight);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.highlighted-text:hover {
+    filter: brightness(1.2);
+}
+
+/* Tooltip for notes */
+.annotation-note-popup {
+    position: absolute;
+    background: #25252b;
+    border: 1px solid var(--reader-border);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    width: 250px;
+    z-index: 999;
+    display: none;
+}

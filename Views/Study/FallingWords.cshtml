@@ -1,0 +1,929 @@
+@model LexiLearn.Models.VocabularySet
+@{
+    ViewData["Title"] = "Bắn Từ Vựng - " + Model.Title;
+    Layout = "_Layout";
+}
+
+<style>
+    :root {
+        --game-bg-color: #2a5298;
+        --cloud-color: #ffffff;
+        --choice-color: #ffffff;
+    }
+
+    /* Premium Gamified UI */
+    body {
+        /* Allow the game to feel immersive */
+    }
+
+    .game-container {
+        position: relative;
+        width: 100%;
+        height: 70vh;
+        min-height: 500px;
+        background: var(--game-bg-color);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .game-header {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        z-index: 10;
+        color: #333;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .stat-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .stat-box i {
+        color: #ff3366;
+    }
+
+    .stat-box.score i {
+        color: #00f2fe;
+    }
+
+    .game-area {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Base Falling Word */
+    .falling-word {
+        position: absolute;
+        background: var(--cloud-color);
+        color: #333; /* Dark text for visibility on light backgrounds */
+        font-weight: 800;
+        font-size: 1.2rem;
+        white-space: nowrap;
+        transform: translateX(-50%);
+        transition: top 0.05s linear;
+        z-index: 5;
+    }
+
+    /* 1. Shape: Cloud */
+    .shape-cloud {
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1), inset 0 -4px 0 rgba(0,0,0,0.05);
+    }
+    .shape-cloud::before, .shape-cloud::after {
+        content: '';
+        position: absolute;
+        background: var(--cloud-color);
+        border-radius: 50%;
+        z-index: -1;
+    }
+    .shape-cloud::before {
+        width: 30px; height: 30px;
+        top: -15px; left: 15px;
+    }
+    .shape-cloud::after {
+        width: 45px; height: 45px;
+        top: -20px; right: 20px;
+    }
+
+    /* 2. Shape: Pill */
+    .shape-pill {
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 3. Shape: Leaf */
+    .shape-leaf {
+        padding: 1rem 2rem;
+        border-radius: 0 25px 0 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 4. Shape: Square */
+    .shape-square {
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 5. Shape: Flower */
+    .shape-flower {
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .shape-flower::before, .shape-flower::after {
+        content: '';
+        position: absolute;
+        background: var(--cloud-color);
+        border-radius: 50px;
+        z-index: -1;
+    }
+    .shape-flower::before {
+        top: -10px; bottom: -10px; left: 15px; right: 15px;
+    }
+    .shape-flower::after {
+        top: 10px; bottom: 10px; left: -10px; right: -10px;
+    }
+
+    /* 6. Shape: Star */
+    .shape-star {
+        padding: 3rem 4rem; /* much larger padding to keep text safe in the center */
+        clip-path: none; /* remove sharp clip-path */
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 15 L72 45 L105 45 L78 67 L89 100 L60 80 L31 100 L42 67 L15 45 L48 45 Z' fill='black' stroke='black' stroke-width='10' stroke-linejoin='round'/%3E%3C/svg%3E");
+        -webkit-mask-size: 100% 100%;
+        mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 15 L72 45 L105 45 L78 67 L89 100 L60 80 L31 100 L42 67 L15 45 L48 45 Z' fill='black' stroke='black' stroke-width='10' stroke-linejoin='round'/%3E%3C/svg%3E");
+        mask-size: 100% 100%;
+        background: var(--cloud-color);
+        /* Use filter drop-shadow since box-shadow is masked */
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+    }
+
+    /* 7. Shape: Heart */
+    .shape-heart {
+        padding: 3rem 4rem 4rem 4rem; /* very large padding, especially bottom, for the heart point */
+        clip-path: none;
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 95 C 20 65, 0 45, 0 25 C 0 5, 25 0, 50 20 C 75 0, 100 5, 100 25 C 100 45, 80 65, 50 95 Z' fill='black' stroke='black' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E");
+        -webkit-mask-size: 100% 100%;
+        mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 95 C 20 65, 0 45, 0 25 C 0 5, 25 0, 50 20 C 75 0, 100 5, 100 25 C 100 45, 80 65, 50 95 Z' fill='black' stroke='black' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E");
+        mask-size: 100% 100%;
+        background: var(--cloud-color);
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+    }
+
+    /* Target lock highlight */
+    .falling-word.targeted {
+        border-color: #ff3366;
+        box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
+        background: #ff3366;
+    }
+
+    /* Explosion effect */
+    .falling-word.explode {
+        animation: explode 0.3s forwards;
+    }
+
+    @@keyframes explode {
+        0% { transform: translateX(-50%) scale(1); opacity: 1; filter: brightness(1); }
+        50% { transform: translateX(-50%) scale(1.5); opacity: 0.8; filter: brightness(2); background: rgba(0,242,254,0.5); }
+        100% { transform: translateX(-50%) scale(2); opacity: 0; filter: brightness(3); }
+    }
+
+    .game-controls {
+        padding: 1.5rem;
+        background: rgba(255,255,255,0.8);
+        display: flex;
+        justify-content: center;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .type-input {
+        width: 100%;
+        max-width: 500px;
+        background: rgba(0,0,0,0.03);
+        border: 2px solid rgba(0,0,0,0.1);
+        color: #333;
+        font-size: 1.5rem;
+        padding: 1rem 2rem;
+        border-radius: 3rem;
+        text-align: center;
+        outline: none;
+        transition: all 0.3s;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .type-input:focus {
+        border-color: #0072ff;
+        box-shadow: 0 0 15px rgba(0,114,255,0.2), inset 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    /* Overlay screens */
+    .game-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(5px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 20;
+        color: #333;
+        text-align: center;
+    }
+
+    .start-btn {
+        background: linear-gradient(45deg, #00c6ff, #0072ff);
+        border: none;
+        padding: 1rem 3rem;
+        font-size: 1.5rem;
+        border-radius: 3rem;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 10px 20px rgba(0,114,255,0.3);
+        margin-top: 1rem;
+    }
+
+    .start-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 25px rgba(0,114,255,0.5);
+    }
+
+        -webkit-text-fill-color: transparent;
+        margin: 1rem 0;
+    }
+    
+    /* Easy Mode Choices */
+    #choiceContainer {
+        display: none;
+        gap: 1.5rem; /* Increased gap */
+        justify-content: center;
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .choice-btn {
+        background: var(--choice-color);
+        border: 2px solid rgba(0,0,0,0.1);
+        border-bottom: 4px solid rgba(0,0,0,0.2); /* 3D Duolingo effect */
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.1s;
+        min-width: 130px;
+        position: relative;
+        margin: 0.5rem; /* Ensure they never touch */
+    }
+
+    .choice-btn:hover {
+        border-color: #0072ff;
+        border-bottom-color: #0056b3;
+        background: #f8fbff;
+    }
+    
+    .choice-btn:active {
+        transform: translateY(2px);
+        border-bottom-width: 2px;
+        margin-bottom: 0.7rem; /* compensate for translate to not affect layout */
+    }
+    
+    .choice-btn .key-hint {
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        background: #ff3366;
+        color: white;
+        border-radius: 50%;
+        width: 26px; height: 26px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .choice-btn.wrong-shake {
+        animation: shake 0.4s;
+        background: #ffdddd;
+        border-color: #ff3333;
+    }
+    
+    @@keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+</style>
+
+<div class="container py-4">
+    <div class="mb-3">
+        <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại bộ từ
+        </a>
+    </div>
+
+    <div class="game-container">
+        <!-- Header / Stats -->
+        <div class="game-header">
+            <div class="stat-box score">
+                <i class="fas fa-star"></i> <span id="score">0</span>
+            </div>
+            <div class="stat-box text-white-50">
+                <span id="level-indicator">Level 1</span>
+            </div>
+            <div class="stat-box lives">
+                <i class="fas fa-heart"></i> <span id="lives">3</span>
+            </div>
+        </div>
+
+        <!-- Game Area (Words fall here) -->
+        <div class="game-area" id="gameArea">
+            <!-- Start Screen -->
+            <div class="game-overlay" id="startScreen">
+                <button class="btn btn-light rounded-circle position-absolute" style="top: 1rem; right: 1rem; width: 45px; height: 45px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="openSettings()" title="Cài đặt giao diện">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <h1 class="fw-bold mb-3 text-primary">Bắn Từ Vựng</h1>
+                <p class="fs-5 text-muted mb-4">Gõ hoặc chọn từ tiếng Anh tương ứng với nghĩa tiếng Việt đang rơi xuống!<br/>Hãy nhanh tay trước khi chúng chạm đất.</p>
+                
+                <div class="mb-4 bg-light p-3 rounded-4 border">
+                    <h5 class="text-dark mb-3">Chọn độ khó:</h5>
+                    <div class="d-flex gap-4 justify-content-center">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="difficulty" id="diffEasy" value="easy" checked>
+                            <label class="form-check-label fs-5" for="diffEasy">
+                                🟢 Dễ <small class="text-muted">(Chọn đáp án)</small>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="difficulty" id="diffHard" value="hard">
+                            <label class="form-check-label fs-5" for="diffHard">
+                                🔴 Khó <small class="text-muted">(Tự gõ phím)</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="start-btn" onclick="startGame()">BẮT ĐẦU</button>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div class="game-overlay" id="gameOverScreen" style="display: none;">
+                <h2 class="fw-bold text-danger mb-2">GAME OVER</h2>
+                <div class="result-score" id="finalScore">0</div>
+                <p class="text-muted mb-4">Bạn đã hoàn thành trò chơi!</p>
+                <div class="d-flex gap-3">
+                    <button class="btn btn-primary rounded-pill px-4 py-2" onclick="location.reload()"><i class="fas fa-redo me-2"></i>Chơi lại</button>
+                    <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill px-4 py-2">Thoát</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="game-controls position-relative">
+            <input type="text" class="type-input" id="wordInput" placeholder="Gõ từ tiếng Anh vào đây..." disabled autocomplete="off" spellcheck="false" />
+            <button class="btn btn-warning rounded-circle position-absolute" id="hintBtn" style="right: 3rem; top: 50%; transform: translateY(-50%); width: 45px; height: 45px; z-index: 20;" title="Gợi ý chữ cái (Phím Tab)" onclick="useHint()" disabled>
+                <i class="fas fa-lightbulb"></i>
+            </button>
+            <div id="hintText" class="text-muted small position-absolute text-center w-100" style="bottom: -25px; left: 0;">Mẹo: Nhấn <b>Tab</b> hoặc click 💡 để được gợi ý (sẽ giảm nửa số điểm).</div>
+            
+            <div id="choiceContainer">
+                <!-- Choices injected by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1050; justify-content: center; align-items: center;">
+    <div class="bg-white p-4 rounded-4 shadow" style="width: 350px; max-width: 90%;">
+        <h4 class="mb-4 fw-bold text-center">Cài đặt Giao diện</h4>
+        
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <label class="fw-bold">Màu nền trời:</label>
+            <input type="color" id="colorBg" class="form-control form-control-color" style="width: 60px;" value="#2a5298" />
+        </div>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <label class="fw-bold">Màu mây từ vựng:</label>
+            <input type="color" id="colorCloud" class="form-control form-control-color" style="width: 60px;" value="#ffffff" />
+        </div>
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <label class="fw-bold">Màu nút đáp án:</label>
+            <input type="color" id="colorChoice" class="form-control form-control-color" style="width: 60px;" value="#ffffff" />
+        </div>
+        
+        <hr/>
+        <div class="mb-4">
+            <label class="fw-bold mb-2">Hình dáng xuất hiện:</label>
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input shape-check" type="checkbox" value="shape-cloud" id="chkCloud">
+                        <label class="form-check-label" for="chkCloud">☁️ Đám mây</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input shape-check" type="checkbox" value="shape-pill" id="chkPill">
+                        <label class="form-check-label" for="chkPill">💊 Viên thuốc</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input shape-check" type="checkbox" value="shape-leaf" id="chkLeaf">
+                        <label class="form-check-label" for="chkLeaf">🍃 Chiếc lá</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input shape-check" type="checkbox" value="shape-square" id="chkSquare">
+                        <label class="form-check-label" for="chkSquare">🔲 Khối vuông</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input shape-check" type="checkbox" value="shape-flower" id="chkFlower">
+                        <label class="form-check-label" for="chkFlower">🌸 Bông hoa</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input shape-check" type="checkbox" value="shape-star" id="chkStar">
+                        <label class="form-check-label" for="chkStar">⭐ Ngôi sao</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input shape-check" type="checkbox" value="shape-heart" id="chkHeart">
+                        <label class="form-check-label" for="chkHeart">❤️ Trái tim</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary w-50 rounded-pill" onclick="closeSettings()">Hủy</button>
+            <button class="btn btn-primary w-50 rounded-pill" onclick="saveSettings()">Lưu thay đổi</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const vocabularyData = @Html.Raw(Json.Serialize(Model.Cards.Select(c => new { term = c.Term.Trim().ToLower(), meaning = c.Meaning })));
+    const setId = @Model.SetId;
+    
+    // Load Settings
+    function loadSettings() {
+        const savedBg = localStorage.getItem('fw_bg_color');
+        const savedCloud = localStorage.getItem('fw_cloud_color');
+        const savedChoice = localStorage.getItem('fw_choice_color');
+        
+        if (savedBg) {
+            document.documentElement.style.setProperty('--game-bg-color', savedBg);
+            document.getElementById('colorBg').value = savedBg;
+        }
+        if (savedCloud) {
+            document.documentElement.style.setProperty('--cloud-color', savedCloud);
+            document.getElementById('colorCloud').value = savedCloud;
+        }
+        if (savedChoice) {
+            document.documentElement.style.setProperty('--choice-color', savedChoice);
+            document.getElementById('colorChoice').value = savedChoice;
+        }
+        
+        let savedShapes = localStorage.getItem('fw_shapes');
+        if (savedShapes) {
+            allowedShapes = JSON.parse(savedShapes);
+        } else {
+            allowedShapes = ['shape-cloud'];
+        }
+        
+        // Update checkboxes
+        document.querySelectorAll('.shape-check').forEach(chk => {
+            chk.checked = allowedShapes.includes(chk.value);
+        });
+    }
+    
+    function openSettings() {
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+    
+    function closeSettings() {
+        document.getElementById('settingsModal').style.display = 'none';
+        // Revert inputs to current CSS variables if user didn't save
+        loadSettings(); 
+    }
+    
+    function saveSettings() {
+        const bg = document.getElementById('colorBg').value;
+        const cloud = document.getElementById('colorCloud').value;
+        const choice = document.getElementById('colorChoice').value;
+        
+        document.documentElement.style.setProperty('--game-bg-color', bg);
+        document.documentElement.style.setProperty('--cloud-color', cloud);
+        document.documentElement.style.setProperty('--choice-color', choice);
+        
+        localStorage.setItem('fw_bg_color', bg);
+        localStorage.setItem('fw_cloud_color', cloud);
+        localStorage.setItem('fw_choice_color', choice);
+        
+        // Save shapes
+        let selectedShapes = [];
+        document.querySelectorAll('.shape-check:checked').forEach(chk => {
+            selectedShapes.push(chk.value);
+        });
+        
+        if (selectedShapes.length === 0) {
+            selectedShapes = ['shape-cloud']; // fallback
+        }
+        allowedShapes = selectedShapes;
+        localStorage.setItem('fw_shapes', JSON.stringify(allowedShapes));
+        
+        closeSettings();
+    }
+    
+    let allowedShapes = ['shape-cloud'];
+    
+    // Call on load
+    loadSettings();
+
+    let isPlaying = false;
+    let score = 0;
+    let lives = 3;
+    let words = []; // Array of active word objects { element, term, meaning, y, speed }
+    let gameLoopRef;
+    let spawnIntervalRef;
+    let lastTime = 0;
+    let spawnRate = 2000; // ms
+    let baseSpeed = 0.05; // pixels per ms
+    let startTime = 0;
+
+    const gameArea = document.getElementById('gameArea');
+    const wordInput = document.getElementById('wordInput');
+    const hintBtn = document.getElementById('hintBtn');
+    const hintText = document.getElementById('hintText');
+    const choiceContainer = document.getElementById('choiceContainer');
+    
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const levelEl = document.getElementById('level-indicator');
+    
+    let currentMode = 'easy';
+    let currentTargetId = -1;
+    let wordIdCounter = 0;
+
+    function startGame() {
+        const diffEasy = document.getElementById('diffEasy');
+        currentMode = diffEasy.checked ? 'easy' : 'hard';
+        
+        document.getElementById('startScreen').style.display = 'none';
+        
+        if (currentMode === 'easy') {
+            wordInput.style.display = 'none';
+            hintBtn.style.display = 'none';
+            hintText.style.display = 'none';
+            choiceContainer.style.display = 'flex';
+        } else {
+            wordInput.style.display = 'block';
+            hintBtn.style.display = 'block';
+            hintText.style.display = 'block';
+            choiceContainer.style.display = 'none';
+            
+            wordInput.disabled = false;
+            hintBtn.disabled = false;
+            wordInput.focus();
+        }
+        
+        isPlaying = true;
+        score = 0;
+        lives = 3;
+        words = [];
+        spawnRate = 7000;
+        baseSpeed = 0.02;
+        startTime = Date.now();
+        
+        updateStats();
+        
+        // Start spawn interval
+        scheduleNextSpawn();
+        
+        // Start game loop
+        lastTime = performance.now();
+        gameLoopRef = requestAnimationFrame(gameLoop);
+    }
+
+    function scheduleNextSpawn() {
+        if (!isPlaying) return;
+        spawnWord();
+        spawnIntervalRef = setTimeout(scheduleNextSpawn, spawnRate);
+    }
+
+    function spawnWord() {
+        if (!isPlaying) return;
+        
+        // Pick random word
+        const randomCard = vocabularyData[Math.floor(Math.random() * vocabularyData.length)];
+        
+        // Pick random shape
+        const randomShape = allowedShapes[Math.floor(Math.random() * allowedShapes.length)];
+        
+        const el = document.createElement('div');
+        el.className = 'falling-word ' + randomShape;
+        el.textContent = randomCard.meaning;
+        
+        // Random horizontal position (10% to 90%)
+        const startX = 10 + Math.random() * 80;
+        el.style.left = startX + '%';
+        el.style.top = '-50px'; // Start above screen
+        
+        gameArea.appendChild(el);
+        
+        // Slightly random speed per word
+        const wordSpeed = baseSpeed + (Math.random() * 0.02);
+        
+        wordIdCounter++;
+        words.push({
+            id: wordIdCounter,
+            element: el,
+            term: randomCard.term,
+            meaning: randomCard.meaning,
+            y: -50,
+            speed: wordSpeed
+        });
+    }
+
+    function gameLoop(currentTime) {
+        if (!isPlaying) return;
+        
+        const dt = currentTime - lastTime;
+        lastTime = currentTime;
+        
+        const areaHeight = gameArea.clientHeight;
+        
+        // Increase difficulty over time
+        const elapsed = (Date.now() - startTime) / 1000;
+        const currentLevel = Math.floor(elapsed / 20) + 1; // Level up every 20 seconds
+        levelEl.textContent = "Level " + currentLevel;
+        
+        baseSpeed = 0.02 + (currentLevel * 0.003);
+        spawnRate = Math.max(1200, 7000 - (currentLevel * 150));
+        
+        // Update word positions
+        for (let i = words.length - 1; i >= 0; i--) {
+            const word = words[i];
+            word.y += word.speed * dt;
+            word.element.style.top = word.y + 'px';
+            
+            // Highlight if matches input
+            const currentInput = wordInput.value.trim().toLowerCase();
+            if (currentInput && word.term.startsWith(currentInput)) {
+                word.element.classList.add('targeted');
+            } else {
+                word.element.classList.remove('targeted');
+            }
+            
+            // Check bottom collision
+            if (word.y > areaHeight) {
+                // Missed
+                word.element.remove();
+                words.splice(i, 1);
+                loseLife();
+                currentTargetId = -1; // Force UI update
+            }
+        }
+        
+        if (currentMode === 'easy') {
+            checkAndRenderChoices();
+        }
+        
+        if (isPlaying) {
+            gameLoopRef = requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function loseLife() {
+        lives--;
+        updateStats();
+        
+        // Screen flash red
+        const flash = document.createElement('div');
+        flash.style.position = 'absolute';
+        flash.style.inset = '0';
+        flash.style.background = 'rgba(255,0,0,0.3)';
+        flash.style.zIndex = '15';
+        flash.style.pointerEvents = 'none';
+        flash.style.transition = 'opacity 0.3s';
+        gameArea.appendChild(flash);
+        
+        setTimeout(() => {
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 300);
+        }, 50);
+        
+        if (lives <= 0) {
+            endGame();
+        }
+    }
+
+    function updateStats() {
+        scoreEl.textContent = score;
+        livesEl.textContent = lives;
+    }
+
+    function endGame() {
+        isPlaying = false;
+        clearTimeout(spawnIntervalRef);
+        cancelAnimationFrame(gameLoopRef);
+        
+        wordInput.disabled = true;
+        hintBtn.disabled = true;
+        wordInput.value = '';
+        choiceContainer.innerHTML = '';
+        
+        // Show Game Over
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('gameOverScreen').style.display = 'flex';
+        
+        // Send score to server
+        const timePlayed = Math.floor((Date.now() - startTime) / 1000);
+        saveResult(score, timePlayed);
+    }
+
+    async function saveResult(finalScore, timeSeconds) {
+        try {
+            await fetch('/Study/SaveFallingWordsResult', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    SetId: setId,
+                    Score: finalScore,
+                    TotalCards: vocabularyData.length,
+                    TimeSeconds: timeSeconds
+                })
+            });
+        } catch (e) {
+            console.error('Lỗi lưu điểm:', e);
+        }
+    }
+
+    // Input handling
+    wordInput.addEventListener('input', () => {
+        const inputVal = wordInput.value.trim().toLowerCase();
+        
+        // Check for exact match
+        for (let i = 0; i < words.length; i++) {
+            if (words[i].term === inputVal) {
+                // Destroy word
+                const wordObj = words[i];
+                wordObj.element.classList.add('explode');
+                
+                // Remove from array immediately so it stops moving
+                words.splice(i, 1);
+                
+                // Remove from DOM after animation
+                setTimeout(() => wordObj.element.remove(), 300);
+                
+                score += wordObj.hintUsed ? 5 : 10;
+                updateStats();
+                
+                wordInput.value = ''; // clear input
+                break; // Only destroy one at a time
+            }
+        }
+    });
+    
+    function useHint() {
+        if (!isPlaying || words.length === 0) return;
+        
+        // Find the lowest word (max Y)
+        let lowestWord = words[0];
+        for (let i = 1; i < words.length; i++) {
+            if (words[i].y > lowestWord.y) {
+                lowestWord = words[i];
+            }
+        }
+        
+        lowestWord.hintUsed = true;
+        lowestWord.element.style.color = '#ffeb3b'; // Highlight word to show it's hinted
+        
+        const currentInput = wordInput.value.toLowerCase();
+        const term = lowestWord.term;
+        
+        if (term.startsWith(currentInput) && currentInput.length < term.length) {
+            // Append next letter
+            wordInput.value = term.substring(0, currentInput.length + 1);
+        } else {
+            // Overwrite with first letter
+            wordInput.value = term.charAt(0);
+        }
+        
+        wordInput.focus();
+        
+        // Trigger input event manually so it highlights or destroys
+        wordInput.dispatchEvent(new Event('input'));
+    }
+
+    function checkAndRenderChoices() {
+        if (words.length === 0) {
+            choiceContainer.innerHTML = '';
+            currentTargetId = -1;
+            return;
+        }
+        
+        let lowestWord = words[0];
+        for (let i = 1; i < words.length; i++) {
+            if (words[i].y > lowestWord.y) lowestWord = words[i];
+        }
+        
+        if (currentTargetId === lowestWord.id) return;
+        
+        currentTargetId = lowestWord.id;
+        
+        // Generate options
+        let options = [lowestWord.term];
+        let attempts = 0;
+        while (options.length < 3 && attempts < 50) {
+            let r = vocabularyData[Math.floor(Math.random() * vocabularyData.length)].term;
+            if (!options.includes(r)) options.push(r);
+            attempts++;
+        }
+        
+        // Shuffle options
+        options.sort(() => Math.random() - 0.5);
+        
+        // Render buttons
+        choiceContainer.innerHTML = '';
+        options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerHTML = `<span class="key-hint">${index + 1}</span>${opt}`;
+            btn.onclick = () => selectChoice(opt, btn);
+            choiceContainer.appendChild(btn);
+        });
+    }
+
+    function selectChoice(selectedTerm, btnElement) {
+        if (!isPlaying || words.length === 0) return;
+        
+        let lowestWord = words[0];
+        let lowestIdx = 0;
+        for (let i = 1; i < words.length; i++) {
+            if (words[i].y > lowestWord.y) {
+                lowestWord = words[i];
+                lowestIdx = i;
+            }
+        }
+        
+        if (lowestWord.term === selectedTerm) {
+            // Correct
+            lowestWord.element.classList.add('explode');
+            words.splice(lowestIdx, 1);
+            setTimeout(() => lowestWord.element.remove(), 300);
+            
+            score += 10;
+            updateStats();
+            currentTargetId = -1; // force choices refresh
+            checkAndRenderChoices();
+        } else {
+            // Incorrect
+            btnElement.classList.remove('wrong-shake');
+            void btnElement.offsetWidth; // trigger reflow
+            btnElement.classList.add('wrong-shake');
+        }
+    }
+
+    // Keydown handling for both modes
+    document.addEventListener('keydown', (e) => {
+        if (!isPlaying) return;
+        
+        if (currentMode === 'easy') {
+            if (e.key === '1' || e.key === '2' || e.key === '3') {
+                const index = parseInt(e.key) - 1;
+                const btns = choiceContainer.querySelectorAll('.choice-btn');
+                if (btns[index]) btns[index].click();
+            }
+        } else {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                useHint();
+            }
+        }
+    });
+
+    // Prevent default form submit if in form (it's not, but just in case)
+    wordInput.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') {
+            e.preventDefault();
+        }
+    });
+    
+    // Auto focus input when clicking game area
+    document.querySelector('.game-container').addEventListener('click', () => {
+        if(isPlaying) wordInput.focus();
+    });
+
+</script>
+}

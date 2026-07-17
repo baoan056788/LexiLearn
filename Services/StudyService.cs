@@ -116,6 +116,22 @@ namespace LexiLearn.Services
             await UpdateProgressAsync(userId, setId);
         }
 
+        public async Task SaveFallingWordsResultAsync(int userId, int setId, int score, int totalCards, int timeSeconds)
+        {
+            var session = new StudySession
+            {
+                UserId = userId,
+                SetId = setId,
+                Mode = "FallingWords",
+                StartedAt = DateTime.Now.AddSeconds(-timeSeconds),
+                EndedAt = DateTime.Now
+            };
+            _context.StudySessions.Add(session);
+            await _context.SaveChangesAsync();
+
+            await UpdateProgressAsync(userId, setId);
+        }
+
         public async Task UpdateCardReviewsAsync(int userId, Dictionary<int, bool> cardResults)
         {
             if (!cardResults.Any()) return;

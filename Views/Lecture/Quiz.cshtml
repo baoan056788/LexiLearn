@@ -1,0 +1,160 @@
+@model LexiLearn.ViewModels.LectureQuizViewModel
+@{
+    ViewData["Title"] = "Bai tap: " + Model.LectureTitle;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-0 text-white">Luyen tap trac nghiem</h2>
+                    <p class="text-muted mb-0">Tu bai giang: <a href="/Lecture/Details/@Model.LectureId" class="text-primary text-decoration-none">@Model.LectureTitle</a></p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary p-2 fs-6"><i class="fas fa-list-ol me-1"></i> @Model.TotalQuestions cau hoi</span>
+                </div>
+            </div>
+
+            <div class="card glass-card border-primary mb-4" style="border-width: 2px;">
+                <div class="card-body p-5">
+                    <form asp-action="SubmitQuiz" method="post" id="quizForm">
+                        <input type="hidden" name="lectureId" value="@Model.LectureId" />
+
+                        @for (int i = 0; i < Model.Questions.Count; i++)
+                        {
+                            var q = Model.Questions[i];
+                            <div class="quiz-item mb-5 pb-4 border-bottom border-secondary">
+                                <h5 class="text-white mb-4">
+                                    <span class="badge bg-secondary me-2">Cau @(i + 1)</span> 
+                                    @q.QuestionText
+                                </h5>
+
+                                <div class="options-container ms-3">
+                                    @if (!string.IsNullOrEmpty(q.OptionA))
+                                    {
+                                        <div class="form-check custom-radio mb-3">
+                                            <input class="form-check-input" type="radio" name="answers[@q.QuizId]" id="q_@(q.QuizId)_a" value="A" required>
+                                            <label class="form-check-label text-light option-label p-2 w-100 rounded" for="q_@(q.QuizId)_a">
+                                                <span class="option-letter">A</span> @q.OptionA
+                                            </label>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(q.OptionB))
+                                    {
+                                        <div class="form-check custom-radio mb-3">
+                                            <input class="form-check-input" type="radio" name="answers[@q.QuizId]" id="q_@(q.QuizId)_b" value="B">
+                                            <label class="form-check-label text-light option-label p-2 w-100 rounded" for="q_@(q.QuizId)_b">
+                                                <span class="option-letter">B</span> @q.OptionB
+                                            </label>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(q.OptionC))
+                                    {
+                                        <div class="form-check custom-radio mb-3">
+                                            <input class="form-check-input" type="radio" name="answers[@q.QuizId]" id="q_@(q.QuizId)_c" value="C">
+                                            <label class="form-check-label text-light option-label p-2 w-100 rounded" for="q_@(q.QuizId)_c">
+                                                <span class="option-letter">C</span> @q.OptionC
+                                            </label>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(q.OptionD))
+                                    {
+                                        <div class="form-check custom-radio mb-3">
+                                            <input class="form-check-input" type="radio" name="answers[@q.QuizId]" id="q_@(q.QuizId)_d" value="D">
+                                            <label class="form-check-label text-light option-label p-2 w-100 rounded" for="q_@(q.QuizId)_d">
+                                                <span class="option-letter">D</span> @q.OptionD
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mt-5">
+                            <a href="/Lecture/Details/@Model.LectureId" class="btn btn-outline-light px-4 py-2">
+                                <i class="fas fa-times me-2"></i>Huy bo
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold" id="submitBtn">
+                                <i class="fas fa-check-circle me-2"></i>Nop bai
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-radio .form-check-input {
+        width: 1.25em;
+        height: 1.25em;
+        margin-top: 0.4em;
+        border-color: #6366f1;
+    }
+    .custom-radio .form-check-input:checked {
+        background-color: #6366f1;
+        border-color: #6366f1;
+    }
+    
+    .option-label {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    
+    .option-label:hover {
+        background-color: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.1);
+    }
+    
+    .form-check-input:checked + .option-label {
+        background-color: rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    
+    .option-letter {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        background-color: rgba(255,255,255,0.1);
+        text-align: center;
+        border-radius: 50%;
+        line-height: 24px;
+        font-weight: bold;
+        margin-right: 10px;
+        font-size: 0.85em;
+    }
+    
+    .form-check-input:checked + .option-label .option-letter {
+        background-color: #6366f1;
+        color: white;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('quizForm').addEventListener('submit', function(e) {
+                // Check if all questions are answered
+                const totalQs = @Model.TotalQuestions;
+                const answered = new Set();
+                
+                const formData = new FormData(this);
+                for(let key of formData.keys()) {
+                    if (key.startsWith('answers[')) {
+                        answered.add(key);
+                    }
+                }
+                
+                if (answered.size < totalQs) {
+                    e.preventDefault();
+                    if (confirm(`Ban moi hoan thanh ${answered.size}/${totalQs} cau hoi. Ban co chac chan muon nop bai khong?`)) {
+                        this.submit();
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -47,6 +47,21 @@ namespace LexiLearn.Controllers
             }
         }
 
+        [HttpGet("synonyms")]
+        public async Task<IActionResult> Synonyms(string meaning, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(meaning)) return BadRequest();
+            try
+            {
+                var list = await _dictionaryService.GenerateVietnameseSynonymsAsync(meaning, cancellationToken);
+                return Ok(list);
+            }
+            catch
+            {
+                return Ok(new List<string>());
+            }
+        }
+
         [HttpGet("conversations")]
         public async Task<IActionResult> Conversations(CancellationToken cancellationToken)
         {

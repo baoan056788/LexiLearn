@@ -402,6 +402,19 @@ body {
     box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5) !important;
 }
 
+.dict-fab.offcanvas-open {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(16px) scale(0.9);
+}
+
+body.dict-offcanvas-open .dict-fab {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(16px) scale(0.9);
+}
+
 .resize-handle {
     position: absolute;
     left: 0;
@@ -422,6 +435,85 @@ body {
     width: 500px;
     max-width: 90vw;
     border-left: 1px solid rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Split panel container */
+.offcanvas-split-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.split-panel {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 80px;
+}
+
+.split-panel-inner {
+    padding: 1rem 1rem;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Horizontal panel splitter */
+.panel-splitter {
+    flex: 0 0 10px;
+    background: #f0f2f5;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    transition: background-color 0.2s;
+    user-select: none;
+    touch-action: none;
+    position: relative;
+    z-index: 5;
+}
+
+.panel-splitter:hover,
+.panel-splitter.dragging {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+    border-color: var(--primary-color);
+}
+
+.splitter-grip {
+    display: flex;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.splitter-grip span {
+    display: block;
+    width: 20px;
+    height: 3px;
+    background: #b0b8c8;
+    border-radius: 2px;
+    transition: background 0.2s;
+}
+
+.panel-splitter:hover .splitter-grip span,
+.panel-splitter.dragging .splitter-grip span {
+    background: var(--primary-color);
+}
+
+/* Splitter grip becomes horizontal dots */
+.splitter-grip {
+    flex-direction: column;
+    gap: 2px;
+}
+
+.splitter-grip span {
+    width: 28px;
+    height: 3px;
 }
 
 .speak-btn {
@@ -434,13 +526,108 @@ body {
 }
 
 .ai-chat-messages {
-    min-height: 220px;
-    max-height: 420px;
     overflow-y: auto;
     border: 1px solid rgba(0,0,0,0.08);
     border-radius: 8px;
     background: #f8fafc;
     padding: 12px;
+    /* Height is controlled dynamically by the split panel */
+    min-height: 120px;
+}
+
+.ai-chat-composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 56px;
+    gap: 10px;
+    align-items: end;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.ai-chat-composer #aiChatInput {
+    min-height: 56px;
+    resize: none;
+    box-shadow: none !important;
+    background: transparent;
+}
+
+.ai-chat-composer #aiChatInput:focus {
+    box-shadow: none;
+}
+
+.ai-chat-send {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex: 0 0 56px;
+}
+
+.notebook-tabs {
+    gap: 8px;
+}
+
+.notebook-tabs .nav-link {
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    color: #4b5563;
+    background: #eef2ff;
+    border: 1px solid transparent;
+}
+
+.notebook-tabs .nav-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.note-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.note-item {
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.note-item:hover,
+.note-item.active {
+    border-color: rgba(102, 126, 234, 0.45);
+    box-shadow: 0 6px 14px rgba(102, 126, 234, 0.08);
+}
+
+.note-item-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.note-item-meta,
+.note-item-preview {
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+
+.note-editor {
+    min-height: 220px;
+    resize: vertical;
 }
 
 .ai-message {
@@ -464,6 +651,43 @@ body {
     line-height: 1.45;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.ai-bubble p,
+.ai-bubble ul,
+.ai-bubble h6 {
+    margin: 0 0 0.75rem;
+}
+
+.ai-bubble p:last-child,
+.ai-bubble ul:last-child,
+.ai-bubble h6:last-child {
+    margin-bottom: 0;
+}
+
+.ai-bubble h6 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.ai-bubble ul {
+    padding-left: 1.1rem;
+}
+
+.ai-bubble li + li {
+    margin-top: 0.25rem;
+}
+
+.ai-bubble code {
+    background: rgba(102, 126, 234, 0.08);
+    color: var(--primary-color);
+    padding: 0.08rem 0.35rem;
+    border-radius: 6px;
+}
+
+.ai-numbered {
+    font-weight: 600;
 }
 
 .ai-message.user .ai-bubble {

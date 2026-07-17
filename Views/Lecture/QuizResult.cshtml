@@ -1,0 +1,98 @@
+@model LexiLearn.ViewModels.QuizResultViewModel
+@{
+    ViewData["Title"] = "Ket qua: " + Model.LectureTitle;
+    
+    var progressClass = "bg-danger";
+    var resultText = "Can co gang hon";
+    var resultIcon = "fa-frown";
+    
+    if (Model.ScorePercent >= 80)
+    {
+        progressClass = "bg-success";
+        resultText = "Xuat sac!";
+        resultIcon = "fa-star text-warning";
+    }
+    else if (Model.ScorePercent >= 50)
+    {
+        progressClass = "bg-primary";
+        resultText = "Dat yeu cau";
+        resultIcon = "fa-thumbs-up text-primary";
+    }
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card glass-card text-center p-5 mb-5 border-@progressClass.Replace("bg-", "")" style="border-width: 2px;">
+                <h2 class="text-white mb-4"><i class="fas @resultIcon me-2"></i>@resultText</h2>
+                
+                <div class="display-1 fw-bold text-white mb-2">@Model.CorrectCount / @Model.TotalQuestions</div>
+                <p class="lead text-muted mb-4">cau tra loi dung (@Model.ScorePercent%)</p>
+                
+                <div class="progress mb-4" style="height: 10px; background-color: rgba(255,255,255,0.1);">
+                    <div class="progress-bar @progressClass" role="progressbar" style="width: @Model.ScorePercent%" aria-valuenow="@Model.ScorePercent" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/Lecture/Quiz/@Model.LectureId" class="btn btn-outline-light px-4 py-2">
+                        <i class="fas fa-redo me-2"></i>Lam lai
+                    </a>
+                    <a href="/Lecture/Details/@Model.LectureId" class="btn btn-primary px-4 py-2">
+                        <i class="fas fa-book-reader me-2"></i>Ve bai giang
+                    </a>
+                </div>
+            </div>
+            
+            <h4 class="text-white mb-4 border-bottom border-secondary pb-2">Chi tiet ket qua</h4>
+            
+            @for (int i = 0; i < Model.Questions.Count; i++)
+            {
+                var q = Model.Questions[i];
+                var isCorrect = q.UserAnswer == q.CorrectAnswer;
+                var cardBorder = isCorrect ? "border-success" : "border-danger";
+                var iconClass = isCorrect ? "fa-check-circle text-success" : "fa-times-circle text-danger";
+                
+                <div class="card glass-card mb-4 @cardBorder">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <i class="fas @iconClass fs-4 me-3 mt-1"></i>
+                            <h5 class="text-white mb-0 lh-base">
+                                <span class="badge bg-secondary me-2">Cau @(i + 1)</span>
+                                @q.QuestionText
+                            </h5>
+                        </div>
+                        
+                        <div class="ms-5 pl-2">
+                            <div class="mb-2">
+                                <span class="text-muted small">Ban chon: </span>
+                                @if (string.IsNullOrEmpty(q.UserAnswer))
+                                {
+                                    <span class="badge bg-secondary">Khong tra loi</span>
+                                }
+                                else
+                                {
+                                    <span class="badge @(isCorrect ? "bg-success" : "bg-danger")">@q.UserAnswer</span>
+                                }
+                            </div>
+                            
+                            @if (!isCorrect)
+                            {
+                                <div class="mb-3">
+                                    <span class="text-muted small">Dap an dung: </span>
+                                    <span class="badge bg-success">@q.CorrectAnswer</span>
+                                </div>
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(q.Explanation))
+                            {
+                                <div class="alert alert-info bg-dark border-info text-light mt-3 mb-0">
+                                    <i class="fas fa-info-circle me-2 text-info"></i> <strong>Giai thich:</strong> @q.Explanation
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

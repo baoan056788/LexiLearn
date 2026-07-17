@@ -1,0 +1,132 @@
+@model IEnumerable<LexiLearn.Models.Lecture>
+@{
+    ViewData["Title"] = "Kham pha bai giang";
+    var categories = ViewBag.Categories as List<LexiLearn.Models.Category> ?? new List<LexiLearn.Models.Category>();
+}
+
+<div class="container-fluid py-4">
+    <div class="text-center mb-5 mt-3">
+        <h1 class="display-5 fw-bold text-white mb-3">Kham pha thu vien bai giang</h1>
+        <p class="lead text-muted mx-auto" style="max-width: 600px;">Tim kiem hang ngan bai giang chat luong cao tu cong dong. Hoc hoi va chia se kien thuc cung LexiLearn.</p>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="card glass-card mb-5 mx-auto" style="max-width: 800px;">
+        <div class="card-body p-4">
+            <form asp-action="Explore" method="get" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label text-light small mb-1">Tim kiem</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-muted"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" value="@ViewBag.Search" class="form-control bg-dark border-secondary text-light" placeholder="Tu khoa..." />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-light small mb-1">Danh muc</label>
+                    <select name="categoryId" class="form-select bg-dark border-secondary text-light">
+                        <option value="">Tat ca danh muc</option>
+                        @foreach (var c in categories)
+                        {
+                            if (ViewBag.CategoryId != null && (int)ViewBag.CategoryId == c.CategoryId)
+                            {
+                                <option value="@c.CategoryId" selected>@c.CategoryName</option>
+                            }
+                            else
+                            {
+                                <option value="@c.CategoryId">@c.CategoryName</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> Loc ket qua</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <h4 class="text-white mb-0">Ket qua tim kiem <span class="badge bg-secondary ms-2 rounded-pill fs-6">@Model.Count() bai giang</span></h4>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 glass-panel rounded-4">
+            <div class="display-3 text-muted mb-3"><i class="fas fa-search-minus"></i></div>
+            <h4 class="text-white">Khong tim thay bai giang phu hop</h4>
+            <p class="text-muted">Thu thay doi tu khoa hoac danh muc tim kiem cua ban.</p>
+            <a asp-action="Explore" class="btn btn-outline-light mt-3">Xoa bo loc</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="card h-100 glass-card explore-card transition-all">
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="badge bg-primary rounded-pill small">@(item.Category?.CategoryName ?? "Chung")</span>
+                            </div>
+                            
+                            <h5 class="card-title text-white fw-bold mb-3">
+                                <a asp-action="Details" asp-route-id="@item.LectureId" class="text-decoration-none text-white stretched-link">
+                                    @item.Title
+                                </a>
+                            </h5>
+                            
+                            <p class="card-text text-muted small text-truncate-3 mb-4">
+                                @(string.IsNullOrEmpty(item.Description) ? "Bai giang nay chua co mo ta. Nhap vao de xem chi tiet noi dung." : item.Description)
+                            </p>
+                        </div>
+                        
+                        <div class="card-footer bg-transparent border-top border-secondary pt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center text-light small">
+                                    <div class="avatar bg-gradient-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                                        <i class="fas fa-user text-white" style="font-size: 10px;"></i>
+                                    </div>
+                                    <span class="text-truncate" style="max-width: 120px;">@(item.User?.FullName ?? "Nguoi dung")</span>
+                                </div>
+                                <span class="text-muted small"><i class="far fa-clock me-1"></i> @item.CreatedAt.ToString("MMM dd")</span>
+                            </div>
+                            
+                            <div class="d-flex text-muted small mt-2 border-top border-secondary pt-2 opacity-75">
+                                <span class="me-3"><i class="fas fa-file-alt me-1 text-primary"></i> @item.Sections.Count phan</span>
+                                @if (item.Quizzes != null && item.Quizzes.Count > 0)
+                                {
+                                    <span><i class="fas fa-check-circle me-1 text-success"></i> @item.Quizzes.Count cau hoi</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .text-truncate-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .explore-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .explore-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.4);
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, var(--bs-primary), #8b5cf6);
+    }
+</style>

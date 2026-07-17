@@ -10,5 +10,10 @@ namespace LexiLearn.ViewModels
         public bool IncludeMatching { get; set; } = false;
         public bool IncludeWritten { get; set; } = false;
         public string? SpecificCardIds { get; set; }
+
+        public bool HasAnyQuestionTypeSelected()
+        {
+            return IncludeTrueFalse || IncludeMultipleChoice || IncludeMatching || IncludeWritten;
+        }
     }
 }

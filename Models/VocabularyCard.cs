@@ -30,6 +30,8 @@ namespace LexiLearn.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        public bool IsHidden { get; set; } = false;
+
         [ForeignKey("SetId")]
         public VocabularySet? VocabularySet { get; set; }
 

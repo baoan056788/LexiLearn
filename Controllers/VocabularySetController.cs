@@ -6,6 +6,7 @@ using System.Data;
 using LexiLearn.Data;
 using LexiLearn.Models;
 using LexiLearn.ViewModels;
+using LexiLearn.Services;
 using ExcelDataReader;
 
 namespace LexiLearn.Controllers
@@ -14,10 +15,12 @@ namespace LexiLearn.Controllers
     public class VocabularySetController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly GeminiVocabExtractService _vocabExtractService;
 
-        public VocabularySetController(AppDbContext context)
+        public VocabularySetController(AppDbContext context, GeminiVocabExtractService vocabExtractService)
         {
             _context = context;
+            _vocabExtractService = vocabExtractService;
         }
 
         private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
@@ -83,6 +86,10 @@ namespace LexiLearn.Controllers
             _context.VocabularySets.Add(set);
             await _context.SaveChangesAsync();
 
+            var allCards = new List<VocabularyCard>();
+            var importedTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // === 1. Xử lý file Excel ===
             if (model.ImportFile != null && model.ImportFile.Length > 0)
             {
                 try
@@ -95,8 +102,6 @@ namespace LexiLearn.Controllers
                             if (result.Tables.Count > 0)
                             {
                                 var table = result.Tables[0];
-                                var cards = new List<VocabularyCard>();
-                                var importedTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                                 // Skip first row (header)
                                 for (int i = 1; i < table.Rows.Count; i++)
                                 {
@@ -110,7 +115,7 @@ namespace LexiLearn.Controllers
 
                                         if (!string.IsNullOrWhiteSpace(meaning) && importedTerms.Add(term))
                                         {
-                                            cards.Add(new VocabularyCard
+                                            allCards.Add(new VocabularyCard
                                             {
                                                 SetId = set.SetId,
                                                 Term = term,
@@ -121,22 +126,55 @@ namespace LexiLearn.Controllers
                                         }
                                     }
                                 }
-                                _context.VocabularyCards.AddRange(cards);
-                                await _context.SaveChangesAsync();
-                                TempData["Success"] = $"Tạo bộ từ và nạp thành công {cards.Count} từ vựng!";
-                                return RedirectToAction("Details", new { id = set.SetId });
                             }
                         }
                     }
                 }
                 catch (Exception)
                 {
-                    TempData["Error"] = "Tạo bộ từ thành công nhưng xảy ra lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng file.";
-                    return RedirectToAction("Details", new { id = set.SetId });
+                    TempData["Error"] = "Xảy ra lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng file.";
                 }
             }
 
-            TempData["Success"] = "Tạo bộ từ thành công!";
+            // === 2. Xử lý file ảnh/PDF bằng Gemini Vision ===
+            if (model.ImageOrPdfFile != null && model.ImageOrPdfFile.Length > 0)
+            {
+                try
+                {
+                    var extractedItems = await _vocabExtractService.ExtractVocabularyAsync(model.ImageOrPdfFile);
+                    foreach (var item in extractedItems)
+                    {
+                        if (importedTerms.Add(item.Term))
+                        {
+                            allCards.Add(new VocabularyCard
+                            {
+                                SetId = set.SetId,
+                                Term = item.Term,
+                                Meaning = item.Meaning,
+                                Ipa = item.Ipa,
+                                Example = item.Example
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = $"Lỗi khi trích xuất từ vựng từ ảnh/PDF: {ex.Message}";
+                }
+            }
+
+            // === 3. Lưu tất cả cards ===
+            if (allCards.Count > 0)
+            {
+                _context.VocabularyCards.AddRange(allCards);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"Tạo bộ từ và nạp thành công {allCards.Count} từ vựng!";
+            }
+            else
+            {
+                TempData["Success"] = "Tạo bộ từ thành công!";
+            }
+
             return RedirectToAction("Details", new { id = set.SetId });
         }
 

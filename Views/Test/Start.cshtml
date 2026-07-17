@@ -1,6 +1,6 @@
 @model TestStartViewModel
 @{
-    ViewData["Title"] = "Bài Test - " + Model.SetTitle;
+    ViewData["Title"] = "Bai Test - " + Model.SetTitle;
 }
 
 <section class="page-header">
@@ -21,37 +21,93 @@
                 {
                     var q = Model.Questions[i];
                     <div class="glass-card mb-4 test-question" data-index="@i">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0">
-                                <span class="badge bg-primary-subtle text-primary me-2">Câu @(i + 1)</span>
-                                @q.QuestionText
-                            </h5>
+                        <div class="d-flex justify-content-between align-items-start mb-3 gap-2 flex-wrap">
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-2">
+                                    <span class="badge bg-primary-subtle text-primary me-2">Câu @(i + 1)</span>
+                                    @q.QuestionText
+                                </h5>
+                                <div class="small text-muted">
+                                    Dạng câu hỏi: @q.QuestionType |
+                                    Trả lời bằng: @q.AnswerLanguage
+                                </div>
+                            </div>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-info rounded-pill px-3 flex-shrink-0 check-btn"
+                                    data-index="@i"
+                                    data-answer="@q.CorrectAnswer"
+                                    data-type="@q.QuestionType"
+                                    onclick="checkAnswer(this)"
+                                    title="Kiểm tra ngay câu này">
+                                <i class="fas fa-check-circle me-1"></i>Kiểm tra
+                            </button>
                         </div>
 
                         <input type="hidden" name="answers[@i].CardId" value="@q.CardId" />
+                        <input type="hidden" name="answers[@i].QuestionText" value="@q.QuestionText" />
+                        <input type="hidden" name="answers[@i].CorrectAnswer" value="@q.CorrectAnswer" />
+                        <input type="hidden" id="example_@i" value="@q.Example" />
 
-                        <div class="row g-3">
-                            @{
-                                var options = new[] { q.OptionA, q.OptionB, q.OptionC, q.OptionD };
-                            }
-                            @foreach (var option in options)
+                        @if (q.QuestionType == "written")
+                        {
+                            <div class="mb-2">
+                                <input type="text"
+                                       name="answers[@i].UserAnswer"
+                                       id="writtenInput_@i"
+                                       class="form-control form-control-lg rounded-pill"
+                                       placeholder="Nhập câu trả lời..." />
+                            </div>
+
+                            <!-- Hint area -->
+                            <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-warning rounded-pill px-3 hint-btn"
+                                        data-index="@i"
+                                        data-answer="@q.CorrectAnswer"
+                                        data-hint-level="0"
+                                        onclick="useHint(this)">
+                                    <i class="fas fa-lightbulb me-1"></i>Gợi ý <span class="hint-remaining">(còn 3 lần)</span>
+                                </button>
+                                <span class="hint-display text-muted small fst-italic" id="hintDisplay_@i"></span>
+                            </div>
+                            <div class="hint-penalty text-danger small mt-1 d-none" id="hintPenalty_@i">
+                                <i class="fas fa-triangle-exclamation me-1"></i>Đã dùng gợi ý
+                            </div>
+                        }
+                        else
+                        {
+                            var options = q.QuestionType == "true-false"
+                                ? new[] { q.OptionA, q.OptionB }
+                                : new[] { q.OptionA, q.OptionB, q.OptionC, q.OptionD };
+
+                            <div class="row g-3">
+                                @foreach (var option in options.Where(x => !string.IsNullOrWhiteSpace(x)))
+                                {
+                                    <div class="col-md-@(q.QuestionType == "true-false" ? "6" : "6")">
+                                        <label class="test-option w-100">
+                                            <input type="radio" name="answers[@i].UserAnswer" value="@option" class="d-none" />
+                                            <div class="test-option-content">
+                                                <i class="fas fa-circle me-2 option-icon"></i>
+                                                @option
+                                            </div>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        
+                        <div class="mt-3 p-3 rounded d-none" id="resultBlock_@i">
+                            <div class="mb-1" id="resultMessage_@i"></div>
+                            @if (!string.IsNullOrEmpty(q.Example))
                             {
-                                <div class="col-md-6">
-                                    <label class="test-option w-100">
-                                        <input type="radio" name="answers[@i].UserAnswer" value="@option" class="d-none" />
-                                        <div class="test-option-content">
-                                            <i class="fas fa-circle me-2 option-icon"></i>
-                                            @option
-                                        </div>
-                                    </label>
-                                </div>
+                                <div class="text-muted small mt-2"><strong>Ví dụ:</strong> @q.Example</div>
                             }
                         </div>
                     </div>
                 }
 
                 <div class="text-center">
-                    <button type="submit" class="btn btn-primary-gradient btn-lg rounded-pill px-5" onclick="return confirm('Bạn chắc chắn muốn nộp bài?')">
+                    <button type="button" class="btn btn-primary-gradient btn-lg rounded-pill px-5" onclick="confirmSubmit(this)">
                         <i class="fas fa-paper-plane me-2"></i>Nộp bài
                     </button>
                     <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary btn-lg rounded-pill px-4 ms-2">Hủy</a>
@@ -63,7 +119,7 @@
 
 @section Scripts {
 <script>
-    // Highlight selected option
+    // ── Multiple choice selection highlight ──
     document.querySelectorAll('.test-option input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const questionCard = this.closest('.test-question');
@@ -71,5 +127,206 @@
             this.closest('.test-option').querySelector('.test-option-content').classList.add('selected');
         });
     });
+
+    // ── Enter key → trigger Check on written inputs ──
+    document.querySelectorAll('input[id^="writtenInput_"]').forEach(input => {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const idx = this.id.replace('writtenInput_', '');
+                const checkBtn = document.querySelector(`.check-btn[data-index="${idx}"]`);
+                if (checkBtn && !checkBtn.disabled) checkBtn.click();
+            }
+        });
+    });
+
+    // ── Hint system ──
+    const MAX_HINTS = 3;
+
+    function buildHintText(answer, level) {
+        // Normalise: work on the full answer string (spaces preserved)
+        const chars = answer.split('');
+        if (level === 0) return null; // no hint yet
+
+        if (level >= MAX_HINTS) {
+            // Level 3: reveal everything
+            return answer;
+        }
+
+        // Decide which positions to reveal
+        // Level 1: first char of each word
+        // Level 2: first char + ~40% of remaining chars (spread evenly)
+        const revealSet = new Set();
+
+        // Always reveal first char of each word
+        let wordStart = true;
+        chars.forEach((ch, idx) => {
+            if (ch === ' ') { wordStart = true; return; }
+            if (wordStart) { revealSet.add(idx); wordStart = false; }
+        });
+
+        if (level >= 2) {
+            // Reveal ~40% more of non-space chars
+            const nonSpaceIdxs = chars.map((ch, i) => ch !== ' ' ? i : -1).filter(i => i >= 0 && !revealSet.has(i));
+            const revealMore = Math.ceil(nonSpaceIdxs.length * 0.4);
+            // pick evenly spread positions
+            for (let k = 0; k < revealMore; k++) {
+                const pos = Math.round(k * (nonSpaceIdxs.length - 1) / Math.max(revealMore - 1, 1));
+                revealSet.add(nonSpaceIdxs[pos]);
+            }
+        }
+
+        return chars.map((ch, idx) => {
+            if (ch === ' ') return ' ';
+            return revealSet.has(idx) ? ch : '_';
+        }).join('');
+    }
+
+    function useHint(btn) {
+        const idx = parseInt(btn.dataset.index);
+        const answer = btn.dataset.answer;
+        let level = parseInt(btn.dataset.hintLevel) + 1;
+        btn.dataset.hintLevel = level;
+
+        const displayEl = document.getElementById(`hintDisplay_${idx}`);
+        const penaltyEl = document.getElementById(`hintPenalty_${idx}`);
+        const inputEl   = document.getElementById(`writtenInput_${idx}`);
+        const remaining = btn.querySelector('.hint-remaining');
+
+        // Build hint text
+        const hintText = buildHintText(answer, level);
+        displayEl.textContent = hintText;
+        displayEl.classList.remove('text-muted');
+        displayEl.classList.add('text-warning', 'fw-semibold');
+
+        // Show penalty notice
+        penaltyEl.classList.remove('d-none');
+        const penaltyLabels = ['', '-10% điểm câu này', '-20% điểm câu này', 'Đáp án đã lộ • -30% điểm câu này'];
+        penaltyEl.innerHTML = `<i class="fas fa-triangle-exclamation me-1"></i>Đã dùng ${level} gợi ý • ${penaltyLabels[level]}`;
+
+        // If level 3 (max): fill the input automatically, disable button
+        if (level >= MAX_HINTS) {
+            inputEl.value = answer;
+            inputEl.classList.add('text-success', 'fw-bold');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-lock me-1"></i>Đã dùng hết gợi ý';
+            btn.classList.remove('btn-outline-warning');
+            btn.classList.add('btn-outline-secondary');
+        } else {
+            const left = MAX_HINTS - level;
+            remaining.textContent = `(còn ${left} lần)`;
+        }
+    }
+
+    // ── Instant Check ──
+    function getAllVariants(raw) {
+        if (!raw) return [];
+        return raw.split(/[,;]/).map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+    }
+
+    function checkAnswer(btn) {
+        const idx      = parseInt(btn.dataset.index);
+        const type     = btn.dataset.type;
+        const correct  = btn.dataset.answer;
+        const validVariants = getAllVariants(correct);
+
+        let userAnswer = '';
+
+        if (type === 'written') {
+            userAnswer = (document.getElementById(`writtenInput_${idx}`)?.value ?? '').trim().toLowerCase();
+        } else {
+            const checked = document.querySelector(`.test-question[data-index="${idx}"] input[type="radio"]:checked`);
+            userAnswer = (checked?.value ?? '').trim().toLowerCase();
+        }
+
+        if (!userAnswer) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Chưa có câu trả lời!',
+                text: type === 'written' ? 'Vui lòng nhập câu trả lời trước.' : 'Vui lòng chọn một đáp án trước.',
+                confirmButtonColor: '#4e54c8',
+                timer: 2500,
+                timerProgressBar: true
+            });
+            return;
+        }
+
+        const userVariants = getAllVariants(userAnswer);
+        const isCorrect = userVariants.some(u => validVariants.includes(u));
+
+        // Mark the card visually
+        const card = document.querySelector(`.test-question[data-index="${idx}"]`);
+        card.style.transition = 'border 0.3s';
+        card.style.border = isCorrect ? '2px solid #20c997' : '2px solid #dc3545';
+
+        // Disable the check button after use
+        btn.disabled = true;
+        btn.classList.remove('btn-outline-info');
+        btn.classList.add(isCorrect ? 'btn-success' : 'btn-danger');
+        btn.innerHTML = isCorrect
+            ? '<i class="fas fa-check me-1"></i>Đúng!'
+            : '<i class="fas fa-times me-1"></i>Sai';
+
+        if (isCorrect) {
+            const resultBlock = document.getElementById(`resultBlock_${idx}`);
+            const resultMessage = document.getElementById(`resultMessage_${idx}`);
+            
+            resultBlock.classList.remove('d-none', 'bg-danger-subtle');
+            resultBlock.classList.add('bg-success-subtle');
+            resultMessage.innerHTML = '<strong class="text-success"><i class="fas fa-check-circle me-1"></i>Chính xác!</strong><br/>Đáp án đúng là: <strong>' + validVariants.join(' / ') + '</strong>';
+
+            setTimeout(() => {
+                const allCards = document.querySelectorAll('.test-question');
+                let nextCard = null;
+                for (let i = idx + 1; i < allCards.length; i++) {
+                    const checkBtn = document.querySelector(`.check-btn[data-index="${i}"]`);
+                    if (checkBtn && !checkBtn.disabled) {
+                        nextCard = allCards[i];
+                        break;
+                    }
+                }
+                if (nextCard) {
+                    nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const nextInput = nextCard.querySelector('input[type="text"]');
+                    if (nextInput) {
+                        setTimeout(() => nextInput.focus(), 400); 
+                    }
+                }
+            }, 800);
+        } else {
+            const displayCorrect = validVariants.join(' / ');
+            const resultBlock = document.getElementById(`resultBlock_${idx}`);
+            const resultMessage = document.getElementById(`resultMessage_${idx}`);
+            
+            resultBlock.classList.remove('d-none', 'bg-success-subtle');
+            resultBlock.classList.add('bg-danger-subtle');
+            resultMessage.innerHTML = '<strong class="text-danger"><i class="fas fa-times-circle me-1"></i>Chưa đúng!</strong><br/>Đáp án đúng là: <strong>' + displayCorrect + '</strong>';
+        }
+    }
+
+    // ── Submit confirmation ──
+    function confirmSubmit(btn) {
+        // Count how many written questions have been hinted
+        const hintedCount = document.querySelectorAll('.hint-btn[data-hint-level]:not([data-hint-level="0"])').length;
+        const extraText = hintedCount > 0
+            ? `⚠️ Bạn đã dùng gợi ý ở ${hintedCount} câu — điểm các câu đó có thể bị trừ.<br><br>`
+            : '';
+
+        Swal.fire({
+            title: 'Bạn chắc chắn muốn nộp bài?',
+            html: `${extraText}Kết quả sẽ được ghi nhận và không thể thay đổi!`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4e54c8',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-paper-plane me-2"></i>Nộp bài',
+            cancelButtonText: 'Xem lại'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                btn.closest('form').submit();
+            }
+        });
+    }
 </script>
 }
+

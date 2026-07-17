@@ -1,0 +1,511 @@
+@model LexiLearn.Models.VocabularySet
+@{
+    ViewData["Title"] = "Blockflash - " + Model.Title;
+    Layout = "_Layout";
+}
+
+<style>
+    .game-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 800px;
+        margin: 0 auto;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .header-panel {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #8b5cf6;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .board-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 5 / 8;
+        background: radial-gradient(circle at center, #f8fafc, #e2e8f0);
+        border: 4px solid #8b5cf6;
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
+    }
+    
+    .grid-lines {
+        position: absolute;
+        inset: 0;
+        background-size: 20% 12.5%;
+        background-image: 
+            linear-gradient(to right, rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(139, 92, 246, 0.1) 1px, transparent 1px);
+        pointer-events: none;
+    }
+
+    .block {
+        position: absolute;
+        width: 20%;
+        height: 12.5%;
+        padding: 4px;
+        transition: top 0.1s linear, left 0.1s linear;
+        z-index: 10;
+    }
+
+    .block-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: white;
+        word-break: break-word;
+        line-height: 1.1;
+        padding: 4px;
+        user-select: none;
+        overflow: hidden;
+        box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.3), inset 0 -4px 6px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .block.type-en .block-inner {
+        background: linear-gradient(135deg, #60a5fa, #2563eb); /* Blue */
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .block.type-vi .block-inner {
+        background: linear-gradient(135deg, #fbbf24, #d97706); /* Orange */
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Flash animation when matching */
+    .block.match-flash .block-inner {
+        animation: flash 0.5s ease-out forwards;
+    }
+
+    @@keyframes flash {
+        0% { filter: brightness(1); transform: scale(1); }
+        50% { filter: brightness(2); transform: scale(1.1); background: white; color: black; }
+        100% { filter: brightness(0); transform: scale(0); opacity: 0; }
+    }
+
+    .game-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 30;
+    }
+
+    .d-pad {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+        width: 100%;
+    }
+    .d-pad button {
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 0 #6d28d9;
+    }
+    .d-pad button:active {
+        transform: translateY(4px);
+        box-shadow: none;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="mb-3">
+        <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại bộ từ
+        </a>
+    </div>
+
+    <div class="game-wrapper">
+        <div class="header-panel position-relative">
+            <h4 class="mb-0 fw-bold"><i class="fas fa-cubes me-2"></i>Blockflash</h4>
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center bg-white rounded-pill px-2 py-1 shadow-sm" style="height: 40px;">
+                    <span class="text-muted small me-2 ms-1">Next:</span>
+                    <div id="nextBlockPreview" style="width: 60px; height: 32px; position: relative;"></div>
+                </div>
+                <div class="badge bg-white text-purple fs-6 shadow-sm" style="color:#8b5cf6;">Điểm: <span id="score">0</span></div>
+            </div>
+        </div>
+        
+        <div class="board-container" id="boardContainer">
+            <div class="grid-lines"></div>
+            
+            <div class="game-overlay" id="startScreen">
+                <h2 class="fw-bold text-purple mb-3" style="color:#8b5cf6;">Blockflash</h2>
+                <p class="text-muted mb-4 text-center px-3">Ghép khối Tiếng Anh vào sát khối Tiếng Việt có nghĩa tương ứng để phá nổ chúng!<br>Dùng mũi tên Trái/Phải để di chuyển, Xuống để thả nhanh.</p>
+                <button class="btn btn-primary rounded-pill px-5 py-3 fw-bold fs-5 shadow" style="background:#8b5cf6; border:none;" onclick="startGame()">BẮT ĐẦU</button>
+            </div>
+
+            <div class="game-overlay" id="gameOverScreen" style="display:none;">
+                <h2 class="fw-bold text-danger mb-2">GAME OVER</h2>
+                <h4 class="mb-4">Điểm: <span id="finalScore">0</span></h4>
+                <div class="d-flex gap-3">
+                    <button class="btn btn-primary rounded-pill px-4 py-2" style="background:#8b5cf6; border:none;" onclick="startGame()"><i class="fas fa-redo me-2"></i>Chơi lại</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile controls -->
+        <div class="d-pad d-md-none">
+            <button onclick="moveLeft()"><i class="fas fa-caret-left"></i></button>
+            <button onclick="dropFast()"><i class="fas fa-caret-down"></i></button>
+            <button onclick="moveRight()"><i class="fas fa-caret-right"></i></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const vocabularyData = @Html.Raw(Json.Serialize(Model.Cards.Select(c => new { id = c.CardId, term = c.Term.Trim(), meaning = c.Meaning })));
+    
+    const COLS = 5;
+    const ROWS = 8;
+    const boardContainer = document.getElementById('boardContainer');
+    let board = []; // 2D array [row][col] storing block objects
+    let score = 0;
+    
+    let currentBlock = null; // The block currently falling
+    let isPlaying = false;
+    let gameLoopRef = null;
+    
+    let baseDropInterval = 1000;
+    let dropInterval = 1000;
+    let lastDropTime = 0;
+    let fastDrop = false;
+
+    let blockQueue = [];
+    let nextBlockData = null;
+
+    // Initialize board
+    function initBoard() {
+        board = [];
+        for (let r = 0; r < ROWS; r++) {
+            board[r] = new Array(COLS).fill(null);
+        }
+        // Remove existing block DOM elements
+        document.querySelectorAll('.block').forEach(el => el.remove());
+        blockQueue = [];
+        nextBlockData = null;
+        document.getElementById('nextBlockPreview').innerHTML = '';
+    }
+
+    function refillQueue() {
+        // Pick 3 random vocabulary items
+        let bag = [];
+        let vocabCopy = [...vocabularyData];
+        // shuffle vocabCopy
+        vocabCopy.sort(() => Math.random() - 0.5);
+        let selected = vocabCopy.slice(0, 3);
+        
+        selected.forEach(v => {
+            bag.push({ id: v.id, text: v.term, type: 'en', cssClass: 'type-en' });
+            bag.push({ id: v.id, text: v.meaning, type: 'vi', cssClass: 'type-vi' });
+        });
+        
+        // Shuffle the bag
+        bag.sort(() => Math.random() - 0.5);
+        blockQueue = blockQueue.concat(bag);
+    }
+    
+    function renderNextBlockPreview() {
+        const previewEl = document.getElementById('nextBlockPreview');
+        previewEl.innerHTML = '';
+        if (!nextBlockData) return;
+        
+        const el = document.createElement('div');
+        el.className = `block-inner ${nextBlockData.cssClass === 'type-en' ? 'bg-primary' : 'bg-warning'}`;
+        // simplified preview styling
+        el.style.fontSize = '0.6rem';
+        el.style.lineHeight = '1';
+        el.style.boxShadow = 'inset 0 2px 4px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0,0,0,0.2)';
+        el.style.border = '1px solid rgba(255,255,255,0.2)';
+        el.style.borderRadius = '4px';
+        
+        if(nextBlockData.cssClass === 'type-en') {
+             el.style.background = 'linear-gradient(135deg, #60a5fa, #2563eb)';
+        } else {
+             el.style.background = 'linear-gradient(135deg, #fbbf24, #d97706)';
+        }
+        el.innerText = nextBlockData.text;
+        
+        previewEl.appendChild(el);
+    }
+
+    function createBlock() {
+        if (blockQueue.length < 2) {
+            refillQueue();
+        }
+        
+        let data = nextBlockData;
+        nextBlockData = blockQueue.shift();
+        
+        // If data was null (first run), pop one more
+        if (!data) {
+            data = nextBlockData;
+            nextBlockData = blockQueue.shift();
+        }
+        
+        renderNextBlockPreview();
+        
+        const el = document.createElement('div');
+        el.className = `block ${data.cssClass}`;
+        
+        const inner = document.createElement('div');
+        inner.className = 'block-inner';
+        inner.innerText = data.text;
+        
+        // Auto resize text if too long
+        if(data.text.length > 10) inner.style.fontSize = '0.9rem';
+        if(data.text.length > 15) inner.style.fontSize = '0.8rem';
+        if(data.text.length > 20) inner.style.fontSize = '0.7rem';
+        
+        el.appendChild(inner);
+        boardContainer.appendChild(el);
+        
+        const block = {
+            id: data.id,
+            text: data.text,
+            type: data.type,
+            x: 2, // middle col
+            y: 0, // top row
+            el: el
+        };
+        
+        updateBlockPosition(block);
+        return block;
+    }
+
+    function updateBlockPosition(block) {
+        if (!block || !block.el) return;
+        block.el.style.left = (block.x * 20) + '%';
+        block.el.style.top = (block.y * 12.5) + '%';
+    }
+
+    function startGame() {
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('gameOverScreen').style.display = 'none';
+        initBoard();
+        score = 0;
+        document.getElementById('score').innerText = score;
+        isPlaying = true;
+        baseDropInterval = 1000;
+        
+        currentBlock = createBlock();
+        
+        // Check game over immediately if spawn point is blocked
+        if (board[currentBlock.y][currentBlock.x] !== null) {
+            gameOver();
+            return;
+        }
+
+        lastDropTime = performance.now();
+        gameLoopRef = requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver() {
+        isPlaying = false;
+        cancelAnimationFrame(gameLoopRef);
+        document.getElementById('gameOverScreen').style.display = 'flex';
+        document.getElementById('finalScore').innerText = score;
+    }
+
+    function moveLeft() {
+        if (!isPlaying || !currentBlock || fastDrop) return;
+        if (currentBlock.x > 0 && board[Math.ceil(currentBlock.y)][currentBlock.x - 1] === null) {
+            currentBlock.x--;
+            updateBlockPosition(currentBlock);
+        }
+    }
+
+    function moveRight() {
+        if (!isPlaying || !currentBlock || fastDrop) return;
+        if (currentBlock.x < COLS - 1 && board[Math.ceil(currentBlock.y)][currentBlock.x + 1] === null) {
+            currentBlock.x++;
+            updateBlockPosition(currentBlock);
+        }
+    }
+
+    function dropFast() {
+        if (!isPlaying || !currentBlock) return;
+        fastDrop = true;
+    }
+
+    window.addEventListener('keydown', e => {
+        if (!isPlaying) return;
+        switch(e.key) {
+            case 'ArrowLeft':
+            case 'a':
+                moveLeft();
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+            case 'd':
+                moveRight();
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+            case 's':
+                dropFast();
+                e.preventDefault();
+                break;
+        }
+    });
+
+    window.addEventListener('keyup', e => {
+        if (e.key === 'ArrowDown' || e.key === 's') {
+            fastDrop = false;
+        }
+    });
+
+    function settleBlock(block) {
+        // block is now landed at block.y (which is an integer)
+        board[block.y][block.x] = block;
+        
+        // Check matches
+        checkMatches();
+    }
+    
+    async function checkMatches() {
+        let hasMatches = true;
+        let combo = 1;
+        
+        while (hasMatches && isPlaying) {
+            let matchedBlocks = new Set();
+            
+            // Scan board for adjacent matches (same id, different type)
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    let b = board[r][c];
+                    if (!b) continue;
+                    
+                    // Check right
+                    if (c < COLS - 1) {
+                        let right = board[r][c+1];
+                        if (right && right.id === b.id && right.type !== b.type) {
+                            matchedBlocks.add(b);
+                            matchedBlocks.add(right);
+                        }
+                    }
+                    
+                    // Check down
+                    if (r < ROWS - 1) {
+                        let down = board[r+1][c];
+                        if (down && down.id === b.id && down.type !== b.type) {
+                            matchedBlocks.add(b);
+                            matchedBlocks.add(down);
+                        }
+                    }
+                }
+            }
+            
+            if (matchedBlocks.size > 0) {
+                // Flash and remove
+                matchedBlocks.forEach(b => {
+                    b.el.classList.add('match-flash');
+                });
+                
+                // Add score
+                score += (matchedBlocks.size / 2) * 20 * combo;
+                document.getElementById('score').innerText = score;
+                combo++;
+                
+                // Wait for animation
+                await new Promise(res => setTimeout(res, 500));
+                
+                // Remove from board and DOM
+                matchedBlocks.forEach(b => {
+                    board[b.y][b.x] = null;
+                    b.el.remove();
+                });
+                
+                // Apply Gravity (make blocks fall)
+                applyGravity();
+                await new Promise(res => setTimeout(res, 200)); // wait for gravity animation
+                
+            } else {
+                hasMatches = false;
+            }
+        }
+        
+        if (!isPlaying) return;
+        
+        // Spawn next block
+        currentBlock = createBlock();
+        if (board[currentBlock.y][currentBlock.x] !== null) {
+            gameOver();
+        }
+    }
+    
+    function applyGravity() {
+        let moved = true;
+        while(moved) {
+            moved = false;
+            for (let c = 0; c < COLS; c++) {
+                for (let r = ROWS - 2; r >= 0; r--) { // from bottom up
+                    if (board[r][c] !== null && board[r+1][c] === null) {
+                        // move down
+                        board[r+1][c] = board[r][c];
+                        board[r][c] = null;
+                        board[r+1][c].y = r + 1;
+                        updateBlockPosition(board[r+1][c]);
+                        moved = true;
+                    }
+                }
+            }
+        }
+    }
+
+    function gameLoop(time) {
+        if (!isPlaying) return;
+        
+        let interval = fastDrop ? 50 : baseDropInterval;
+        
+        if (time - lastDropTime > interval) {
+            lastDropTime = time;
+            
+            if (currentBlock) {
+                let nextY = currentBlock.y + 1;
+                // Check floor collision or block collision
+                if (nextY >= ROWS || board[nextY][currentBlock.x] !== null) {
+                    let landedBlock = currentBlock;
+                    currentBlock = null;
+                    settleBlock(landedBlock);
+                } else {
+                    currentBlock.y = nextY;
+                    updateBlockPosition(currentBlock);
+                }
+            }
+        }
+        
+        // Increase speed slowly
+        baseDropInterval = Math.max(300, 1000 - (score * 1.5));
+        
+        if (isPlaying) {
+            gameLoopRef = requestAnimationFrame(gameLoop);
+        }
+    }
+</script>
+}

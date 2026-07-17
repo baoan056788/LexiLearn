@@ -90,6 +90,42 @@
                 </a>
             </div>
             <div class="col-md-3">
+                <a href="/Study/FallingWords/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #ff3366;"><i class="fas fa-meteor"></i></div>
+                        <h5 class="fw-bold text-dark">Bắn Từ Vựng</h5>
+                        <p class="text-muted small mb-0">Gõ từ tiếng Anh để bắn hạ thiên thạch</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/Study/SnakeGame/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #10b981;"><i class="fas fa-snake"></i></div>
+                        <h5 class="fw-bold text-dark">Rắn Săn Từ</h5>
+                        <p class="text-muted small mb-0">Điều khiển rắn ăn các đáp án đúng</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/Study/Blockflash/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #8b5cf6;"><i class="fas fa-cubes"></i></div>
+                        <h5 class="fw-bold text-dark">Blockflash</h5>
+                        <p class="text-muted small mb-0">Xếp hình nối từ kịch tính</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/Study/Crossword/@Model.SetId" class="text-decoration-none">
+                    <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
+                        <div class="feature-icon mb-3" style="font-size: 2rem; color: #f43f5e;"><i class="fas fa-border-all"></i></div>
+                        <h5 class="fw-bold text-dark">Crossword</h5>
+                        <p class="text-muted small mb-0">Giải đố ô chữ kì diệu</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
                 <a href="/Learn/Index/@Model.SetId" class="text-decoration-none">
                     <div class="feature-card text-center h-100 bg-white shadow-sm rounded-4 p-4 border border-light custom-hover">
                         <div class="feature-icon mb-3" style="font-size: 2rem; color: #667eea;"><i class="fas fa-chart-line"></i></div>
@@ -118,7 +154,10 @@
                         <input type="text" name="Term" class="form-control" placeholder="Từ tiếng Anh *" required />
                     </div>
                     <div class="col-md-3">
-                        <input type="text" name="Meaning" class="form-control" placeholder="Nghĩa tiếng Việt *" required />
+                        <div class="input-group">
+                            <input type="text" name="Meaning" id="createMeaning" class="form-control" placeholder="Nghĩa tiếng Việt *" required />
+                            <button type="button" class="btn btn-outline-info" title="Gợi ý từ đồng nghĩa bằng AI" onclick="generateSynonyms('createMeaning', this)"><i class="fas fa-magic"></i></button>
+                        </div>
                     </div>
                     <div class="col-md-2">
                         <input type="text" name="Ipa" class="form-control" placeholder="Phiên âm IPA" />
@@ -136,21 +175,92 @@
 
     <!-- Cards List -->
     <div class="glass-card">
-        <h5 class="fw-bold mb-3"><i class="fas fa-list me-2"></i>Danh sách thẻ từ (@Model.Cards.Count)</h5>
+        <!-- Header: title + search + sort -->
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+            <h5 class="fw-bold mb-0 me-auto">
+                <i class="fas fa-list me-2"></i>Danh sách thẻ từ
+                <span class="badge bg-primary-soft text-primary ms-1" id="card-count-badge">@Model.Cards.Count</span>
+            </h5>
+
+            <!-- Search box -->
+            <div class="input-group" style="max-width:260px;">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted small"></i>
+                </span>
+                <input type="text" id="card-search"
+                       class="form-control border-start-0 ps-0"
+                       placeholder="Tìm từ, nghĩa..."
+                       autocomplete="off" />
+                <button class="btn btn-outline-secondary" id="search-clear" title="Xóa" style="display:none">
+                    <i class="fas fa-times small"></i>
+                </button>
+            </div>
+
+            <!-- Sort buttons -->
+            <div class="btn-group" role="group" aria-label="Sắp xếp">
+                <button class="btn btn-outline-primary btn-sm sort-btn active" data-sort="default" title="Mặc định">
+                    <i class="fas fa-list-ol"></i>
+                </button>
+                <button class="btn btn-outline-primary btn-sm sort-btn" data-sort="az" title="Sắp xếp A → Z">
+                    A→Z
+                </button>
+                <button class="btn btn-outline-primary btn-sm sort-btn" data-sort="za" title="Sắp xếp Z → A">
+                    Z→A
+                </button>
+            </div>
+        </div>
         @if (Model.Cards.Any())
         {
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+<style>
+    /* Click-to-edit cells */
+    .editable-cell {
+        cursor: text;
+        border-radius: 4px;
+        padding: 2px 6px;
+        transition: background 0.15s, box-shadow 0.15s;
+        min-width: 40px;
+        display: inline-block;
+        min-height: 22px;
+    }
+    .editable-cell:hover {
+        background: rgba(102,126,234,0.08);
+        box-shadow: 0 0 0 1px rgba(102,126,234,0.3);
+    }
+    .editable-cell:focus {
+        outline: none;
+        background: #fff;
+        box-shadow: 0 0 0 2px rgba(102,126,234,0.55);
+        color: #222;
+    }
+    .editable-cell[data-placeholder]:empty:before {
+        content: attr(data-placeholder);
+        color: #bbb;
+        font-style: italic;
+        font-weight: normal;
+    }
+    tr.saving-row td { opacity: 0.6; pointer-events: none; }
+    tr.save-ok { animation: flashGreen 1s ease; }
+    @(Html.Raw("@keyframes")) flashGreen { 0%,100%{background:transparent} 30%{background:#d4edda} }
+    .term-cell { display: flex; align-items: center; gap: 0; }
+    .term-wrapper { display: flex; align-items: center; }
+    
+    /* Hidden row style */
+    tr.is-hidden { opacity: 0.5; background-color: #f8f9fa; }
+    tr.is-hidden td:not(:last-child) { text-decoration: line-through; }
+</style>
+
+<table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
+                            <th style="width:40px">#</th>
                             <th>Từ tiếng Anh</th>
                             <th>Nghĩa</th>
                             <th>Phiên âm</th>
                             <th>Ví dụ</th>
                             @if (isOwner)
                             {
-                                <th class="text-end">Thao tác</th>
+                                <th class="text-end" style="width:120px">Thao tác</th>
                             }
                         </tr>
                     </thead>
@@ -158,22 +268,87 @@
                         @{ int index = 1; }
                         @foreach (var card in Model.Cards)
                         {
-                            <tr>
-                                <td>@(index++)</td>
-                                <td class="fw-semibold text-primary">@card.Term</td>
-                                <td>@card.Meaning</td>
-                                <td class="text-muted">@card.Ipa</td>
-                                <td class="text-muted small">@card.Example</td>
+                            <tr id="row-@card.CardId" data-card-id="@card.CardId" class="@(card.IsHidden ? "is-hidden" : "")">
+                                <td class="text-muted" style="width:40px">@(index++)</td>
+
                                 @if (isOwner)
                                 {
-                                    <td class="text-end">
-                                        <a href="/VocabularyCard/Edit/@card.CardId" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                                    <!-- Term: speaker + editable span -->
+                                    <td class="fw-semibold text-primary">
+                                        <div class="term-wrapper">
+                                            <button class="btn btn-sm btn-light rounded-circle p-0 me-2 shadow-sm flex-shrink-0 d-flex justify-content-center align-items-center"
+                                                    style="width:28px;height:28px;"
+                                                    onmousedown="event.preventDefault()"
+                                                    onclick="speakEnglish(this.parentElement.querySelector('.editable-cell').textContent.trim())"
+                                                    title="Nghe phát âm">
+                                                <i class="fas fa-volume-up text-primary small"></i>
+                                            </button>
+                                            <span class="editable-cell"
+                                                  contenteditable="true"
+                                                  data-field="term"
+                                                  data-card-id="@card.CardId"
+                                                  data-original="@card.Term"
+                                                  data-placeholder="Từ tiếng Anh"
+                                                  spellcheck="false">@card.Term</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="editable-cell"
+                                              contenteditable="true"
+                                              data-field="meaning"
+                                              data-card-id="@card.CardId"
+                                              data-original="@card.Meaning"
+                                              data-placeholder="Nghĩa tiếng Việt"
+                                              spellcheck="false">@card.Meaning</span>
+                                    </td>
+                                    <td class="text-muted">
+                                        <span class="editable-cell"
+                                              contenteditable="true"
+                                              data-field="ipa"
+                                              data-card-id="@card.CardId"
+                                              data-original="@(card.Ipa ?? "")"
+                                              data-placeholder="IPA"
+                                              spellcheck="false">@card.Ipa</span>
+                                    </td>
+                                    <td class="text-muted small">
+                                        <span class="editable-cell"
+                                              contenteditable="true"
+                                              data-field="example"
+                                              data-card-id="@card.CardId"
+                                              data-original="@(card.Example ?? "")"
+                                              data-placeholder="Ví dụ"
+                                              spellcheck="false">@card.Example</span>
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <div class="form-check form-check-inline me-2" title="Ẩn thẻ từ này khỏi bài test">
+                                            <input class="form-check-input" type="checkbox" id="hide-@card.CardId" 
+                                                   @(card.IsHidden ? "checked" : "")
+                                                   onchange="toggleHide(@card.CardId, this.checked)" />
+                                            <label class="form-check-label text-muted small" for="hide-@card.CardId">Ẩn</label>
+                                        </div>
                                         <form asp-action="Delete" asp-controller="VocabularyCard" method="post" class="d-inline" onsubmit="return confirm('Xóa thẻ từ này?')">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@card.CardId" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
+                                }
+                                else
+                                {
+                                    <td class="fw-semibold text-primary">
+                                        <div class="term-wrapper">
+                                            <button class="btn btn-sm btn-light rounded-circle p-0 me-2 shadow-sm flex-shrink-0 d-flex justify-content-center align-items-center"
+                                                    style="width:28px;height:28px;"
+                                                    onclick="speakEnglish('@Html.Raw(card.Term.Replace("'", "\\'"))')"
+                                                    title="Nghe phát âm">
+                                                <i class="fas fa-volume-up text-primary small"></i>
+                                            </button>
+                                            <span>@card.Term</span>
+                                        </div>
+                                    </td>
+                                    <td>@card.Meaning</td>
+                                    <td class="text-muted">@card.Ipa</td>
+                                    <td class="text-muted small">@card.Example</td>
                                 }
                             </tr>
                         }
@@ -190,3 +365,239 @@
         }
     </div>
 </div>
+
+@section Scripts {
+<script>
+async function generateSynonyms(inputId, btnElement) {
+    const input = document.getElementById(inputId);
+    const meaning = input.value.trim();
+    if (!meaning) {
+        alert('Vui lòng nhập nghĩa tiếng Việt trước!');
+        return;
+    }
+    
+    const originalHtml = btnElement.innerHTML;
+    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btnElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/ai/synonyms?meaning=' + encodeURIComponent(meaning));
+        if (response.ok) {
+            const synonyms = await response.json();
+            if (synonyms && synonyms.length > 0) {
+                const currentMeanings = meaning.split(/[,;]/).map(m => m.trim()).filter(m => m);
+                const newMeanings = synonyms.filter(s => !currentMeanings.includes(s.toLowerCase()));
+                if (newMeanings.length > 0) {
+                    input.value = meaning + ', ' + newMeanings.join(', ');
+                }
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        btnElement.innerHTML = originalHtml;
+        btnElement.disabled = false;
+    }
+}
+
+// ===== Click-to-Edit (contenteditable) =====
+
+// Collect all field values from a row
+function getRowData(cardId) {
+    const row = document.getElementById('row-' + cardId);
+    const get = (field) => (row.querySelector(`[data-field="${field}"]`)?.textContent.trim() ?? '');
+    return { term: get('term'), meaning: get('meaning'), ipa: get('ipa'), example: get('example') };
+}
+
+// Save a single card row
+async function saveEditableRow(cardId) {
+    const row = document.getElementById('row-' + cardId);
+    const { term, meaning, ipa, example } = getRowData(cardId);
+
+    if (!term || !meaning) {
+        // Highlight invalid
+        ['term','meaning'].forEach(f => {
+            const el = row.querySelector(`[data-field="${f}"]`);
+            if (el && !el.textContent.trim()) el.style.boxShadow = '0 0 0 2px #dc354580';
+        });
+        return false;
+    }
+
+    row.classList.add('saving-row');
+    try {
+        const res = await fetch('/api/VocabularyCard/EditAjax', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ CardId: cardId, Term: term, Meaning: meaning, Ipa: ipa, Example: example })
+        });
+        if (res.ok) {
+            // Update data-original on all fields
+            row.querySelectorAll('[data-card-id]').forEach(el => {
+                el.dataset.original = el.textContent.trim();
+                el.style.boxShadow = '';
+            });
+            row.classList.remove('saving-row');
+            row.classList.add('save-ok');
+            setTimeout(() => row.classList.remove('save-ok'), 1000);
+            return true;
+        } else {
+            const msg = await res.text();
+            alert('Lỗi lưu: ' + msg);
+            row.classList.remove('saving-row');
+            return false;
+        }
+    } catch (e) {
+        alert('Lỗi kết nối.');
+        row.classList.remove('saving-row');
+        return false;
+    }
+}
+
+// Revert a cell to its original value
+function revertCell(el) {
+    el.textContent = el.dataset.original ?? '';
+    el.style.boxShadow = '';
+}
+
+// Toggle Hidden
+async function toggleHide(cardId, isHidden) {
+    const row = document.getElementById('row-' + cardId);
+    try {
+        const res = await fetch('/api/VocabularyCard/ToggleHiddenAjax', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ CardId: cardId, IsHidden: isHidden })
+        });
+        
+        if (res.ok) {
+            if (isHidden) {
+                row.classList.add('is-hidden');
+            } else {
+                row.classList.remove('is-hidden');
+            }
+        } else {
+            alert('Lỗi khi cập nhật trạng thái.');
+            document.getElementById('hide-' + cardId).checked = !isHidden;
+        }
+    } catch (e) {
+        alert('Lỗi kết nối.');
+        document.getElementById('hide-' + cardId).checked = !isHidden;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.editable-cell').forEach(cell => {
+        const cardId = parseInt(cell.dataset.cardId);
+
+        // On focus: store snapshot
+        cell.addEventListener('focus', () => {
+            cell._snapshot = cell.textContent.trim();
+            cell.style.boxShadow = '';
+        });
+
+        // Keydown: Enter = blur (trigger save), Escape = revert
+        cell.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                cell.blur();
+            } else if (e.key === 'Escape') {
+                revertCell(cell);
+                cell.blur();
+            }
+        });
+
+        // On blur: if value changed, save entire row
+        cell.addEventListener('blur', async () => {
+            const newVal = cell.textContent.trim();
+            if (newVal === (cell._snapshot ?? cell.dataset.original)) return; // no change
+            await saveEditableRow(cardId);
+        });
+    });
+
+    // ===== Search and Sort (Client-side) =====
+    const searchInput = document.getElementById('card-search');
+    const searchClear = document.getElementById('search-clear');
+    const sortBtns = document.querySelectorAll('.sort-btn');
+    const tbody = document.querySelector('table tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr[id^="row-"]'));
+    const countBadge = document.getElementById('card-count-badge');
+
+    // Store original index for default sorting
+    rows.forEach((row, idx) => {
+        row.dataset.originalIndex = idx;
+    });
+
+    function applyFilterAndSort() {
+        const query = searchInput.value.toLowerCase().trim();
+        const activeSortBtn = document.querySelector('.sort-btn.active');
+        const sortType = activeSortBtn ? activeSortBtn.dataset.sort : 'default';
+
+        let visibleRows = [];
+
+        // Filter
+        rows.forEach(row => {
+            const term = row.querySelector('[data-field="term"]')?.textContent.toLowerCase() ?? row.querySelector('.term-wrapper span:not(.editable-cell)')?.textContent.toLowerCase() ?? '';
+            const meaning = row.querySelector('[data-field="meaning"]')?.textContent.toLowerCase() ?? row.querySelectorAll('td')[isOwner ? 2 : 1]?.textContent.toLowerCase() ?? '';
+            
+            if (term.includes(query) || meaning.includes(query)) {
+                row.style.display = '';
+                visibleRows.push(row);
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Sort
+        if (sortType === 'az') {
+            visibleRows.sort((a, b) => {
+                const termA = (a.querySelector('[data-field="term"]')?.textContent ?? a.querySelector('.term-wrapper span:not(.editable-cell)')?.textContent ?? '').toLowerCase();
+                const termB = (b.querySelector('[data-field="term"]')?.textContent ?? b.querySelector('.term-wrapper span:not(.editable-cell)')?.textContent ?? '').toLowerCase();
+                return termA.localeCompare(termB);
+            });
+        } else if (sortType === 'za') {
+            visibleRows.sort((a, b) => {
+                const termA = (a.querySelector('[data-field="term"]')?.textContent ?? a.querySelector('.term-wrapper span:not(.editable-cell)')?.textContent ?? '').toLowerCase();
+                const termB = (b.querySelector('[data-field="term"]')?.textContent ?? b.querySelector('.term-wrapper span:not(.editable-cell)')?.textContent ?? '').toLowerCase();
+                return termB.localeCompare(termA);
+            });
+        } else {
+            // default
+            visibleRows.sort((a, b) => parseInt(a.dataset.originalIndex) - parseInt(b.dataset.originalIndex));
+        }
+
+        // Re-append to DOM in order
+        visibleRows.forEach((row, idx) => {
+            tbody.appendChild(row);
+            // Update # column index
+            const indexCell = row.querySelector('td.text-muted');
+            if (indexCell && indexCell.textContent.trim() !== '') {
+                indexCell.textContent = idx + 1;
+            }
+        });
+
+        // Update count badge
+        countBadge.textContent = visibleRows.length;
+        
+        // Toggle clear button
+        searchClear.style.display = query.length > 0 ? 'block' : 'none';
+    }
+
+    // Event listeners
+    searchInput.addEventListener('input', applyFilterAndSort);
+    
+    searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        applyFilterAndSort();
+        searchInput.focus();
+    });
+
+    sortBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sortBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilterAndSort();
+        });
+    });
+});
+</script>
+}

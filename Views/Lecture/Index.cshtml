@@ -1,0 +1,105 @@
+@model IEnumerable<LexiLearn.Models.Lecture>
+@{
+    ViewData["Title"] = "Bai giang cua toi";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0 text-white">Bai giang cua toi</h2>
+            <p class="text-muted mb-0">Quan ly cac bai giang ban da tai len</p>
+        </div>
+        <div>
+            <a asp-action="Explore" class="btn btn-outline-light me-2">
+                <i class="fas fa-compass me-1"></i> Kham pha
+            </a>
+            <a asp-action="Upload" class="btn btn-primary">
+                <i class="fas fa-upload me-1"></i> Tai len bai giang
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 glass-panel rounded-4">
+            <div class="display-1 text-muted mb-3"><i class="fas fa-folder-open"></i></div>
+            <h4 class="text-white">Chua co bai giang nao</h4>
+            <p class="text-muted mb-4">Hay tai len bai giang dau tien cua ban de bat dau hoc tap.</p>
+            <a asp-action="Upload" class="btn btn-primary px-4 py-2">
+                <i class="fas fa-plus me-2"></i>Tai len ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 glass-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary rounded-pill">@(item.Category?.CategoryName ?? "Khong phan loai")</span>
+                                @if (item.IsPublic)
+                                {
+                                    <span class="badge bg-success" title="Cong khai"><i class="fas fa-globe"></i></span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary" title="Rieng tu"><i class="fas fa-lock"></i></span>
+                                }
+                            </div>
+                            
+                            <h5 class="card-title text-white mt-3 fw-bold">@item.Title</h5>
+                            <p class="card-text text-muted small text-truncate-2">
+                                @(string.IsNullOrEmpty(item.Description) ? "Khong co mo ta" : item.Description)
+                            </p>
+                            
+                            <div class="d-flex align-items-center text-muted small mb-3">
+                                <div class="me-3" title="So phan/muc">
+                                    <i class="fas fa-list me-1"></i> @item.Sections.Count
+                                </div>
+                                <div class="me-3" title="Cau hoi trac nghiem">
+                                    <i class="fas fa-question-circle me-1"></i> @item.Quizzes.Count
+                                </div>
+                                <div title="Ngay tao">
+                                    <i class="far fa-calendar-alt me-1"></i> @item.CreatedAt.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top border-secondary pt-3 pb-3 d-flex justify-content-between">
+                            <a asp-action="Details" asp-route-id="@item.LectureId" class="btn btn-sm btn-primary">
+                                <i class="fas fa-book-reader me-1"></i> Hoc ngay
+                            </a>
+                            <div>
+                                @if (item.Quizzes.Any())
+                                {
+                                    <a asp-action="Quiz" asp-route-id="@item.LectureId" class="btn btn-sm btn-outline-success me-1" title="Lam bai tap">
+                                        <i class="fas fa-tasks"></i>
+                                    </a>
+                                }
+                                <a asp-action="Edit" asp-route-id="@item.LectureId" class="btn btn-sm btn-outline-light me-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@item.LectureId" method="post" class="d-inline" onsubmit="return confirm('Ban co chac chan muon xoa bai giang nay khong?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>

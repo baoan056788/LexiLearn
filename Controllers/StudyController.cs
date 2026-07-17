@@ -25,7 +25,7 @@ namespace LexiLearn.Controllers
         {
             var set = await _context.VocabularySets
                 .AsNoTracking()
-                .Include(s => s.Cards)
+                .Include(s => s.Cards.Where(c => !c.IsHidden))
                 .Include(s => s.Category)
                 .FirstOrDefaultAsync(s => s.SetId == id);
 
@@ -69,7 +69,7 @@ namespace LexiLearn.Controllers
         {
             var set = await _context.VocabularySets
                 .AsNoTracking()
-                .Include(s => s.Cards)
+                .Include(s => s.Cards.Where(c => !c.IsHidden))
                 .Include(s => s.Category)
                 .FirstOrDefaultAsync(s => s.SetId == id);
 
@@ -91,6 +91,87 @@ namespace LexiLearn.Controllers
 
             return Json(new { success = true });
         }
+
+        public async Task<IActionResult> FallingWords(int id)
+        {
+            var set = await _context.VocabularySets
+                .AsNoTracking()
+                .Include(s => s.Cards.Where(c => !c.IsHidden))
+                .Include(s => s.Category)
+                .FirstOrDefaultAsync(s => s.SetId == id);
+
+            if (set == null) return NotFound();
+            if (set.Cards.Count < 4)
+            {
+                TempData["Error"] = "Cần ít nhất 4 thẻ từ để chơi Bắn Từ Vựng!";
+                return RedirectToAction("Details", "VocabularySet", new { id });
+            }
+
+            return View(set);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveFallingWordsResult([FromBody] FallingWordsResultRequest request)
+        {
+            await _studyService.SaveFallingWordsResultAsync(
+                GetUserId(), request.SetId, request.Score, request.TotalCards, request.TimeSeconds);
+
+            return Json(new { success = true });
+        }
+
+        public async Task<IActionResult> SnakeGame(int id)
+        {
+            var set = await _context.VocabularySets
+                .AsNoTracking()
+                .Include(s => s.Cards.Where(c => !c.IsHidden))
+                .Include(s => s.Category)
+                .FirstOrDefaultAsync(s => s.SetId == id);
+
+            if (set == null) return NotFound();
+            if (set.Cards.Count < 4)
+            {
+                TempData["Error"] = "Cần ít nhất 4 thẻ từ để chơi Rắn Săn Từ!";
+                return RedirectToAction("Details", "VocabularySet", new { id });
+            }
+
+            return View(set);
+        }
+
+        public async Task<IActionResult> Blockflash(int id)
+        {
+            var set = await _context.VocabularySets
+                .AsNoTracking()
+                .Include(s => s.Cards.Where(c => !c.IsHidden))
+                .Include(s => s.Category)
+                .FirstOrDefaultAsync(s => s.SetId == id);
+
+            if (set == null) return NotFound();
+            if (set.Cards.Count < 4)
+            {
+                TempData["Error"] = "Cần ít nhất 4 thẻ từ để chơi Blockflash!";
+                return RedirectToAction("Details", "VocabularySet", new { id });
+            }
+
+            return View(set);
+        }
+
+        public async Task<IActionResult> Crossword(int id)
+        {
+            var set = await _context.VocabularySets
+                .AsNoTracking()
+                .Include(s => s.Cards.Where(c => !c.IsHidden))
+                .Include(s => s.Category)
+                .FirstOrDefaultAsync(s => s.SetId == id);
+
+            if (set == null) return NotFound();
+            if (set.Cards.Count < 4)
+            {
+                TempData["Error"] = "Cần ít nhất 4 thẻ từ để chơi Ô chữ!";
+                return RedirectToAction("Details", "VocabularySet", new { id });
+            }
+
+            return View(set);
+        }
     }
 
     public class FlashcardResultRequest
@@ -109,6 +190,14 @@ namespace LexiLearn.Controllers
     {
         public int SetId { get; set; }
         public int CorrectCount { get; set; }
+        public int TotalCards { get; set; }
+        public int TimeSeconds { get; set; }
+    }
+
+    public class FallingWordsResultRequest
+    {
+        public int SetId { get; set; }
+        public int Score { get; set; }
         public int TotalCards { get; set; }
         public int TimeSeconds { get; set; }
     }

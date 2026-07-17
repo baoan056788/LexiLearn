@@ -36,6 +36,12 @@ namespace LexiLearn.Controllers
         [HttpPost]
         public async Task<IActionResult> Start(TestSetupViewModel setup)
         {
+            if (!setup.HasAnyQuestionTypeSelected())
+            {
+                TempData["Error"] = "Hay chon it nhat mot dang cau hoi.";
+                return RedirectToAction("Setup", new { id = setup.SetId });
+            }
+
             var test = await _testService.GenerateTestAsync(setup);
             if (test == null)
             {

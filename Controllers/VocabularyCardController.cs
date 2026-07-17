@@ -50,6 +50,49 @@ namespace LexiLearn.Controllers
             return Ok(new { success = true, cardId = card.CardId });
         }
 
+        public record EditCardDto(int CardId, string Term, string Meaning, string? Ipa, string? Example);
+
+        [HttpPost("api/VocabularyCard/EditAjax")]
+        public async Task<IActionResult> EditAjax([FromBody] EditCardDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Term) || string.IsNullOrWhiteSpace(dto.Meaning))
+                return BadRequest("Thiếu thông tin từ vựng.");
+
+            var card = await _context.VocabularyCards
+                .Include(c => c.VocabularySet)
+                .FirstOrDefaultAsync(c => c.CardId == dto.CardId);
+
+            if (card == null) return NotFound("Không tìm thấy thẻ từ.");
+            if (card.VocabularySet?.UserId != GetUserId()) return Unauthorized("Không có quyền chỉnh sửa.");
+
+            card.Term = dto.Term;
+            card.Meaning = dto.Meaning;
+            card.Ipa = dto.Ipa;
+            card.Example = dto.Example;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true });
+        }
+
+        public record ToggleHiddenDto(int CardId, bool IsHidden);
+
+        [HttpPost("api/VocabularyCard/ToggleHiddenAjax")]
+        public async Task<IActionResult> ToggleHiddenAjax([FromBody] ToggleHiddenDto dto)
+        {
+            var card = await _context.VocabularyCards
+                .Include(c => c.VocabularySet)
+                .FirstOrDefaultAsync(c => c.CardId == dto.CardId);
+
+            if (card == null) return NotFound("Không tìm thấy thẻ từ.");
+            if (card.VocabularySet?.UserId != GetUserId()) return Unauthorized("Không có quyền chỉnh sửa.");
+
+            card.IsHidden = dto.IsHidden;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(VocabularyCardViewModel model)

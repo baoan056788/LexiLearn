@@ -13,6 +13,16 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
+            <!-- Word Selection Toolbar -->
+            <div class="d-flex justify-content-between align-items-center mb-3" id="selectionToolbar">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-semibold text-muted small" id="selectedCountLabel">Đang học: tất cả @Model.Cards.Count từ</span>
+                </div>
+                <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="openSelectModal()">
+                    <i class="fas fa-filter me-1"></i>Chọn từ để học
+                </button>
+            </div>
+
             <!-- Progress bar -->
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <span class="text-muted" id="cardCounter">1 / @Model.Cards.Count</span>
@@ -35,11 +45,57 @@
                 <div class="progress-bar bg-gradient-primary" id="progressBar" style="width: 0%"></div>
             </div>
 
+<!-- Word Selection Modal -->
+<div class="modal fade" id="selectWordsModal" tabindex="-1" aria-labelledby="selectWordsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg,#4e54c8,#8f94fb); border-radius: 16px 16px 0 0;">
+                <h5 class="modal-title fw-bold text-white" id="selectWordsModalLabel">
+                    <i class="fas fa-list-check me-2"></i>Chọn từ để tập trung học
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="selectAllWords()">
+                            <i class="fas fa-check-double me-1"></i>Chọn tất cả
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="deselectAllWords()">
+                            <i class="fas fa-xmark me-1"></i>Bỏ chọn tất cả
+                        </button>
+                    </div>
+                    <span class="text-muted small fw-semibold" id="modalSelectedCount">0 từ được chọn</span>
+                </div>
+                <!-- Search inside modal -->
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 bg-light" id="modalSearchInput" placeholder="Tìm từ..." oninput="filterModalWords()">
+                </div>
+                <div id="wordCheckboxList" class="row g-2">
+                    <!-- populated by JS -->
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary-gradient rounded-pill px-4 fw-semibold" onclick="applyWordSelection()">
+                    <i class="fas fa-play me-2"></i>Bắt đầu học
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
             <!-- Flashcard -->
             <div class="flashcard-container" id="flashcardContainer">
                 <div class="flashcard" id="flashcard" onclick="flipCard()">
                     <div class="flashcard-front">
-                        <div class="flashcard-content">
+                        <div class="flashcard-content position-relative">
+                            <button class="btn btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm" style="width: 40px; height: 40px;" id="btnSpeakFront" onclick="speakCurrentCard(event)" title="Nghe phát âm">
+                                <i class="fas fa-volume-up text-primary"></i>
+                            </button>
                             <h2 class="term-text" id="termText"></h2>
                             <p class="ipa-text" id="ipaText"></p>
                         </div>
@@ -158,6 +214,14 @@
         document.getElementById('flashcard').classList.toggle('flipped');
     }
 
+    function speakCurrentCard(e) {
+        if (e) e.stopPropagation();
+        const card = currentCards[currentIndex];
+        if (card && card.term) {
+            speakEnglish(card.term);
+        }
+    }
+
     function markCard(isKnown) {
         const card = currentCards[currentIndex];
         results[card.cardId] = isKnown;
@@ -247,7 +311,99 @@
         if (currentCards.length > 0) showCard(0);
     }
 
+    // ── Word Selection Modal ──
+    let selectModal = null;
+
+    function openSelectModal() {
+        const list = document.getElementById('wordCheckboxList');
+        list.innerHTML = '';
+        document.getElementById('modalSearchInput').value = '';
+
+        allCards.forEach(card => {
+            const isActive = currentCards.some(c => c.cardId === card.cardId);
+            const col = document.createElement('div');
+            col.className = 'col-md-6 word-check-item';
+            col.dataset.term = card.term.toLowerCase();
+            col.dataset.meaning = card.meaning.toLowerCase();
+            col.innerHTML = `
+                <label class="d-flex align-items-center gap-2 p-2 rounded-3 border w-100 h-100 cursor-pointer word-check-label ${isActive ? 'border-primary bg-primary-subtle' : 'bg-light'}" style="cursor:pointer;">
+                    <input type="checkbox" class="form-check-input flex-shrink-0 mt-0" value="${card.cardId}" ${isActive ? 'checked' : ''} onchange="onWordCheckChange(this)">
+                    <div class="overflow-hidden">
+                        <div class="fw-semibold text-truncate">${card.term}</div>
+                        <div class="text-muted small text-truncate">${card.meaning}</div>
+                    </div>
+                </label>`;
+            list.appendChild(col);
+        });
+
+        updateModalCount();
+
+        if (!selectModal) {
+            selectModal = new bootstrap.Modal(document.getElementById('selectWordsModal'));
+        }
+        selectModal.show();
+    }
+
+    function onWordCheckChange(checkbox) {
+        const label = checkbox.closest('.word-check-label');
+        if (checkbox.checked) {
+            label.classList.add('border-primary', 'bg-primary-subtle');
+            label.classList.remove('bg-light');
+        } else {
+            label.classList.remove('border-primary', 'bg-primary-subtle');
+            label.classList.add('bg-light');
+        }
+        updateModalCount();
+    }
+
+    function updateModalCount() {
+        const checked = document.querySelectorAll('#wordCheckboxList input[type="checkbox"]:checked').length;
+        document.getElementById('modalSelectedCount').textContent = `${checked} từ được chọn`;
+    }
+
+    function selectAllWords() {
+        document.querySelectorAll('#wordCheckboxList .word-check-item:not([style*="display: none"]) input[type="checkbox"]').forEach(cb => {
+            cb.checked = true;
+            onWordCheckChange(cb);
+        });
+    }
+
+    function deselectAllWords() {
+        document.querySelectorAll('#wordCheckboxList .word-check-item:not([style*="display: none"]) input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            onWordCheckChange(cb);
+        });
+    }
+
+    function filterModalWords() {
+        const q = document.getElementById('modalSearchInput').value.toLowerCase();
+        document.querySelectorAll('#wordCheckboxList .word-check-item').forEach(item => {
+            const match = item.dataset.term.includes(q) || item.dataset.meaning.includes(q);
+            item.style.display = match ? '' : 'none';
+        });
+        updateModalCount();
+    }
+
+    function applyWordSelection() {
+        const checked = [...document.querySelectorAll('#wordCheckboxList input[type="checkbox"]:checked')].map(cb => parseInt(cb.value));
+        if (checked.length === 0) {
+            Swal.fire({ icon: 'warning', title: 'Chưa chọn từ nào!', text: 'Vui lòng chọn ít nhất 1 từ để học.', confirmButtonColor: '#4e54c8' });
+            return;
+        }
+        currentCards = allCards.filter(c => checked.includes(c.cardId));
+        const label = document.getElementById('selectedCountLabel');
+        if (currentCards.length === allCards.length) {
+            label.textContent = `Đang học: tất cả ${allCards.length} từ`;
+            label.className = 'fw-semibold text-muted small';
+        } else {
+            label.innerHTML = `<i class="fas fa-filter me-1 text-primary"></i>Đang học: <span class="text-primary fw-bold">${currentCards.length}</span> / ${allCards.length} từ`;
+        }
+        if (selectModal) selectModal.hide();
+        resetState();
+    }
+
     // Initialize
     if (currentCards.length > 0) showCard(0);
+
 </script>
 }

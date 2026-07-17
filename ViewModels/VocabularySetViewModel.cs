@@ -25,6 +25,9 @@ namespace LexiLearn.ViewModels
         [Display(Name = "Tải lên file Excel")]
         public IFormFile? ImportFile { get; set; }
 
+        [Display(Name = "Tải lên ảnh hoặc PDF")]
+        public IFormFile? ImageOrPdfFile { get; set; }
+
         public List<Category> Categories { get; set; } = new List<Category>();
         public List<VocabularyCardViewModel> Cards { get; set; } = new List<VocabularyCardViewModel>();
     }

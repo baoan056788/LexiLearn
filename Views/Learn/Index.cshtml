@@ -109,7 +109,16 @@
             btn.textContent = 'Kiểm tra';
             btn.onclick = () => {
                 const val = document.getElementById('typingAnswer').value.trim();
-                handleAnswer(val.toLowerCase() === card.meaning.toLowerCase(), btn, card.meaning);
+                let userAns = val.toLowerCase();
+                let correctAns = card.meaning.toLowerCase();
+                
+                userAns = userAns.replace("kế bên", "bên cạnh");
+                userAns = userAns.replace("xe hơi", "ô tô");
+                
+                let validMeanings = correctAns.split(/[,;]/).map(x => x.trim()).filter(x => x);
+                let isCorrect = validMeanings.includes(userAns);
+                
+                handleAnswer(isCorrect, btn, card.meaning);
             };
 
             container.appendChild(input);

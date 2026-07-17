@@ -34,5 +34,6 @@ namespace LexiLearn.Models
         public ICollection<Test> Tests { get; set; } = new List<Test>();
         public ICollection<StudySession> StudySessions { get; set; } = new List<StudySession>();
         public ICollection<Progress> Progresses { get; set; } = new List<Progress>();
+        public ICollection<StudyNote> StudyNotes { get; set; } = new List<StudyNote>();
     }
 }

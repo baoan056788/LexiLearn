@@ -182,6 +182,200 @@ namespace LexiLearn.Migrations
                     b.ToTable("Feedbacks");
                 });
 
+            modelBuilder.Entity("LexiLearn.Models.Lecture", b =>
+                {
+                    b.Property<int>("LectureId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LectureId"));
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("HtmlContent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("LectureId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("IsPublic");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("Lectures");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureCourse", b =>
+                {
+                    b.Property<int>("CourseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseId"));
+
+                    b.Property<string>("CoverImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CourseId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("LectureCourses");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureQuiz", b =>
+                {
+                    b.Property<int>("QuizId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuizId"));
+
+                    b.Property<string>("CorrectAnswer")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("nvarchar(1)");
+
+                    b.Property<string>("Explanation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LectureId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OptionA")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("OptionB")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("OptionC")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("OptionD")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SectionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("QuizId");
+
+                    b.HasIndex("LectureId");
+
+                    b.HasIndex("SectionId");
+
+                    b.ToTable("LectureQuizzes");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureSection", b =>
+                {
+                    b.Property<int>("SectionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SectionId"));
+
+                    b.Property<string>("AnchorId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("HeadingLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HtmlContent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LectureId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ParentSectionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("SectionId");
+
+                    b.HasIndex("LectureId");
+
+                    b.HasIndex("ParentSectionId");
+
+                    b.ToTable("LectureSections");
+                });
+
             modelBuilder.Entity("LexiLearn.Models.Notification", b =>
                 {
                     b.Property<int>("NotificationId")
@@ -410,6 +604,57 @@ namespace LexiLearn.Migrations
                         .IsUnique();
 
                     b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.StudyNote", b =>
+                {
+                    b.Property<int>("StudyNoteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StudyNoteId"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RelatedTerm")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("SetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("StudyNoteId");
+
+                    b.HasIndex("SetId");
+
+                    b.HasIndex("UserId", "UpdatedAt");
+
+                    b.HasIndex("UserId", "IsPinned", "UpdatedAt");
+
+                    b.ToTable("StudyNotes");
                 });
 
             modelBuilder.Entity("LexiLearn.Models.StudyResult", b =>
@@ -662,6 +907,63 @@ namespace LexiLearn.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("LexiLearn.Models.UserAnnotation", b =>
+                {
+                    b.Property<int>("AnnotationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AnnotationId"));
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EndOffset")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LectureId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("SectionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SelectedText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StartOffset")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("XPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("AnnotationId");
+
+                    b.HasIndex("LectureId");
+
+                    b.HasIndex("SectionId");
+
+                    b.HasIndex("UserId", "LectureId");
+
+                    b.ToTable("UserAnnotations");
+                });
+
             modelBuilder.Entity("LexiLearn.Models.VocabularyCard", b =>
                 {
                     b.Property<int>("CardId")
@@ -688,6 +990,9 @@ namespace LexiLearn.Migrations
                     b.Property<string>("Ipa")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Meaning")
                         .IsRequired()
@@ -860,6 +1165,78 @@ namespace LexiLearn.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("LexiLearn.Models.Lecture", b =>
+                {
+                    b.HasOne("LexiLearn.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LexiLearn.Models.LectureCourse", "Course")
+                        .WithMany("Lectures")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LexiLearn.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureCourse", b =>
+                {
+                    b.HasOne("LexiLearn.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureQuiz", b =>
+                {
+                    b.HasOne("LexiLearn.Models.Lecture", "Lecture")
+                        .WithMany("Quizzes")
+                        .HasForeignKey("LectureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LexiLearn.Models.LectureSection", "Section")
+                        .WithMany("Quizzes")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Lecture");
+
+                    b.Navigation("Section");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureSection", b =>
+                {
+                    b.HasOne("LexiLearn.Models.Lecture", "Lecture")
+                        .WithMany("Sections")
+                        .HasForeignKey("LectureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LexiLearn.Models.LectureSection", "ParentSection")
+                        .WithMany("ChildSections")
+                        .HasForeignKey("ParentSectionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Lecture");
+
+                    b.Navigation("ParentSection");
+                });
+
             modelBuilder.Entity("LexiLearn.Models.Notification", b =>
                 {
                     b.HasOne("LexiLearn.Models.User", "CreatedBy")
@@ -946,6 +1323,24 @@ namespace LexiLearn.Migrations
                         .IsRequired();
 
                     b.Navigation("Reporter");
+
+                    b.Navigation("VocabularySet");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.StudyNote", b =>
+                {
+                    b.HasOne("LexiLearn.Models.VocabularySet", "VocabularySet")
+                        .WithMany("StudyNotes")
+                        .HasForeignKey("SetId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("LexiLearn.Models.User", "User")
+                        .WithMany("StudyNotes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
 
                     b.Navigation("VocabularySet");
                 });
@@ -1048,6 +1443,32 @@ namespace LexiLearn.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("LexiLearn.Models.UserAnnotation", b =>
+                {
+                    b.HasOne("LexiLearn.Models.Lecture", "Lecture")
+                        .WithMany("Annotations")
+                        .HasForeignKey("LectureId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("LexiLearn.Models.LectureSection", "Section")
+                        .WithMany()
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("LexiLearn.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lecture");
+
+                    b.Navigation("Section");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LexiLearn.Models.VocabularyCard", b =>
                 {
                     b.HasOne("LexiLearn.Models.VocabularySet", "VocabularySet")
@@ -1098,6 +1519,27 @@ namespace LexiLearn.Migrations
                     b.Navigation("VocabularySets");
                 });
 
+            modelBuilder.Entity("LexiLearn.Models.Lecture", b =>
+                {
+                    b.Navigation("Annotations");
+
+                    b.Navigation("Quizzes");
+
+                    b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureCourse", b =>
+                {
+                    b.Navigation("Lectures");
+                });
+
+            modelBuilder.Entity("LexiLearn.Models.LectureSection", b =>
+                {
+                    b.Navigation("ChildSections");
+
+                    b.Navigation("Quizzes");
+                });
+
             modelBuilder.Entity("LexiLearn.Models.Notification", b =>
                 {
                     b.Navigation("Recipients");
@@ -1128,6 +1570,8 @@ namespace LexiLearn.Migrations
 
                     b.Navigation("Progresses");
 
+                    b.Navigation("StudyNotes");
+
                     b.Navigation("StudySessions");
 
                     b.Navigation("Tests");
@@ -1147,6 +1591,8 @@ namespace LexiLearn.Migrations
                     b.Navigation("Cards");
 
                     b.Navigation("Progresses");
+
+                    b.Navigation("StudyNotes");
 
                     b.Navigation("StudySessions");
 

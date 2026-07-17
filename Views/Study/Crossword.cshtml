@@ -1,0 +1,569 @@
+@model LexiLearn.Models.VocabularySet
+@{
+    ViewData["Title"] = "Ô Chữ - " + Model.Title;
+    Layout = "_Layout";
+}
+
+<style>
+    .cw-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    @@media (min-width: 768px) {
+        .cw-container {
+            flex-direction: row;
+        }
+    }
+
+    .cw-board-wrapper {
+        flex: 1;
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .cw-clues-wrapper {
+        width: 100%;
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    @@media (min-width: 768px) {
+        .cw-clues-wrapper {
+            width: 300px;
+        }
+    }
+
+    .cw-grid {
+        display: grid;
+        gap: 0;
+        /* Grid Template will be set by JS */
+    }
+
+    .cw-cell {
+        width: 35px;
+        height: 35px;
+        border: 1px solid #ccc;
+        background: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        text-transform: uppercase;
+        position: relative;
+    }
+
+    .cw-cell.empty {
+        background: transparent;
+        border: none;
+    }
+
+    .cw-cell input {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        outline: none;
+        color: #333;
+    }
+
+    .cw-cell input:focus {
+        background: #e0f2fe;
+    }
+
+    .cw-cell .number {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        font-size: 0.6rem;
+        font-weight: normal;
+        color: #666;
+        pointer-events: none;
+    }
+    
+    .cw-cell.correct input {
+        background: #dcfce3;
+        color: #166534;
+    }
+
+    .clue-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .clue-item {
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+        transition: background 0.2s;
+    }
+
+    .clue-item:hover {
+        background: #f1f5f9;
+    }
+
+    .clue-item.active {
+        background: #e0f2fe;
+        border-left: 3px solid #0ea5e9;
+    }
+    
+    .clue-item.solved {
+        text-decoration: line-through;
+        color: #94a3b8;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại bộ từ
+        </a>
+        <h3 class="fw-bold mb-0 text-danger"><i class="fas fa-border-all me-2"></i>Ô Chữ Kì Diệu</h3>
+        <div class="d-flex gap-2">
+            <button class="btn btn-warning rounded-pill px-4 text-dark fw-bold" onclick="giveHint()">
+                <i class="fas fa-lightbulb me-2"></i>Gợi ý
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="checkAnswers()">
+                <i class="fas fa-check me-2"></i>Kiểm tra
+            </button>
+        </div>
+    </div>
+    
+    <div id="loadingMsg" class="text-center py-5">
+        <div class="spinner-border text-danger" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Đang tự động thiết kế ô chữ...</p>
+    </div>
+
+    <div class="cw-container" id="gameContainer" style="display:none;">
+        <div class="cw-board-wrapper">
+            <div class="cw-grid" id="cwGrid"></div>
+        </div>
+        
+        <div class="cw-clues-wrapper">
+            <h5 class="fw-bold mb-3 text-primary">Ngang (Across)</h5>
+            <ul class="clue-list" id="acrossClues"></ul>
+            
+            <h5 class="fw-bold mt-4 mb-3 text-success">Dọc (Down)</h5>
+            <ul class="clue-list" id="downClues"></ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Remove spaces and special chars for crossword words
+    const rawData = @Html.Raw(Json.Serialize(Model.Cards.Where(c => !c.IsHidden).Select(c => new { term = c.Term.Trim(), meaning = c.Meaning })));
+    
+    let words = [];
+    rawData.forEach(item => {
+        let cleanTerm = item.term.replace(/[^a-zA-Z]/g, '').toUpperCase();
+        if(cleanTerm.length > 1) {
+            words.push({ word: cleanTerm, clue: item.meaning });
+        }
+    });
+    
+    // Crossword Generator
+    const GRID_SIZE = 30; // internal grid size
+    let grid = [];
+    let placedWords = [];
+    let unplacedWords = [];
+    
+    function initGrid() {
+        grid = [];
+        for(let i=0; i<GRID_SIZE; i++) {
+            grid[i] = new Array(GRID_SIZE).fill(null);
+        }
+    }
+    
+    function generateCrossword() {
+        initGrid();
+        placedWords = [];
+        unplacedWords = [];
+        
+        // Sort words by length descending
+        words.sort((a, b) => b.word.length - a.word.length);
+        
+        if (words.length === 0) return;
+        
+        // Place first word in middle horizontally
+        let first = words[0];
+        let startX = Math.floor(GRID_SIZE/2) - Math.floor(first.word.length/2);
+        let startY = Math.floor(GRID_SIZE/2);
+        placeWord(first, startX, startY, 0); // 0 = horizontal
+        
+        // Try placing others
+        for (let i = 1; i < words.length; i++) {
+            let placed = tryPlaceWord(words[i]);
+            if (!placed) {
+                unplacedWords.push(words[i]);
+            }
+        }
+        
+        // Place unplaced words far below (island) so user can still answer them
+        if (unplacedWords.length > 0) {
+            let islandY = getBottomMostY() + 3;
+            unplacedWords.forEach(uw => {
+                let islandX = 2; // Arbitrary left
+                // Ensure it fits
+                if(islandX + uw.word.length < GRID_SIZE && islandY < GRID_SIZE - 2) {
+                     placeWord(uw, islandX, islandY, 0);
+                     islandY += 2;
+                }
+            });
+        }
+        
+        renderCrossword();
+    }
+    
+    function getBottomMostY() {
+        let max = 0;
+        for(let y=0; y<GRID_SIZE; y++) {
+            for(let x=0; x<GRID_SIZE; x++) {
+                if(grid[y][x]) max = y;
+            }
+        }
+        return max;
+    }
+    
+    function tryPlaceWord(wordObj) {
+        let bestPlacement = null;
+        let maxIntersections = -1;
+        
+        let wordStr = wordObj.word;
+        
+        for (let w = 0; w < placedWords.length; w++) {
+            let placed = placedWords[w];
+            let placedStr = placed.word;
+            let dir = placed.dir === 0 ? 1 : 0; // Perpendicular
+            
+            // Find common letters
+            for (let i = 0; i < wordStr.length; i++) {
+                let char = wordStr[i];
+                for (let j = 0; j < placedStr.length; j++) {
+                    if (char === placedStr[j]) {
+                        // Potential intersection
+                        let pX = dir === 0 ? placed.x + j - i : placed.x;
+                        let pY = dir === 0 ? placed.y : placed.y + j - i;
+                        
+                        // Validate
+                        if (isValidPlacement(wordStr, pX, pY, dir)) {
+                            // Count intersections (just 1 for now, but could be more)
+                            let intersections = 0;
+                            for(let k=0; k<wordStr.length; k++) {
+                                let cx = pX + (dir===0 ? k : 0);
+                                let cy = pY + (dir===1 ? k : 0);
+                                if(grid[cy][cx] !== null) intersections++;
+                            }
+                            
+                            if (intersections > maxIntersections) {
+                                maxIntersections = intersections;
+                                bestPlacement = {x: pX, y: pY, dir: dir};
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (bestPlacement) {
+            placeWord(wordObj, bestPlacement.x, bestPlacement.y, bestPlacement.dir);
+            return true;
+        }
+        return false;
+    }
+    
+    function isValidPlacement(wordStr, x, y, dir) {
+        if (x < 0 || y < 0) return false;
+        if (dir === 0 && x + wordStr.length >= GRID_SIZE) return false;
+        if (dir === 1 && y + wordStr.length >= GRID_SIZE) return false;
+        
+        for (let i = 0; i < wordStr.length; i++) {
+            let cx = x + (dir === 0 ? i : 0);
+            let cy = y + (dir === 1 ? i : 0);
+            
+            // If cell is occupied, it must match the letter exactly
+            if (grid[cy][cx] !== null && grid[cy][cx] !== wordStr[i]) {
+                return false;
+            }
+            
+            // Check adjacent cells to ensure we aren't creating accidental words
+            let isIntersection = (grid[cy][cx] === wordStr[i]);
+            
+            if (!isIntersection) {
+                // If horizontal, check top and bottom
+                if (dir === 0) {
+                    if (cy > 0 && grid[cy-1][cx] !== null) return false;
+                    if (cy < GRID_SIZE - 1 && grid[cy+1][cx] !== null) return false;
+                }
+                // If vertical, check left and right
+                if (dir === 1) {
+                    if (cx > 0 && grid[cy][cx-1] !== null) return false;
+                    if (cx < GRID_SIZE - 1 && grid[cy][cx+1] !== null) return false;
+                }
+            }
+        }
+        
+        // Check before and after the word
+        if (dir === 0) {
+            if (x > 0 && grid[y][x-1] !== null) return false;
+            if (x + wordStr.length < GRID_SIZE && grid[y][x+wordStr.length] !== null) return false;
+        } else {
+            if (y > 0 && grid[y-1][x] !== null) return false;
+            if (y + wordStr.length < GRID_SIZE && grid[y+wordStr.length][x] !== null) return false;
+        }
+        
+        return true;
+    }
+    
+    function placeWord(wordObj, x, y, dir) {
+        wordObj.x = x;
+        wordObj.y = y;
+        wordObj.dir = dir;
+        
+        for (let i = 0; i < wordObj.word.length; i++) {
+            let cx = x + (dir === 0 ? i : 0);
+            let cy = y + (dir === 1 ? i : 0);
+            grid[cy][cx] = wordObj.word[i];
+        }
+        
+        placedWords.push(wordObj);
+    }
+    
+    function renderCrossword() {
+        // Calculate bounding box
+        let minX = GRID_SIZE, maxX = 0, minY = GRID_SIZE, maxY = 0;
+        for (let y = 0; y < GRID_SIZE; y++) {
+            for (let x = 0; x < GRID_SIZE; x++) {
+                if (grid[y][x] !== null) {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+        }
+        
+        // Padding
+        minX = Math.max(0, minX - 1);
+        maxX = Math.min(GRID_SIZE - 1, maxX + 1);
+        minY = Math.max(0, minY - 1);
+        maxY = Math.min(GRID_SIZE - 1, maxY + 1);
+        
+        let cols = maxX - minX + 1;
+        let rows = maxY - minY + 1;
+        
+        const cwGrid = document.getElementById('cwGrid');
+        cwGrid.style.gridTemplateColumns = `repeat(${cols}, 35px)`;
+        cwGrid.style.gridTemplateRows = `repeat(${rows}, 35px)`;
+        cwGrid.innerHTML = '';
+        
+        // Assign numbers to words
+        let numberCounter = 1;
+        placedWords.sort((a,b) => {
+            if(a.y !== b.y) return a.y - b.y;
+            return a.x - b.x;
+        });
+        
+        let cellNumberMap = {}; // "x,y" -> number
+        placedWords.forEach(w => {
+            let key = `${w.x},${w.y}`;
+            if (!cellNumberMap[key]) {
+                cellNumberMap[key] = numberCounter++;
+            }
+            w.number = cellNumberMap[key];
+        });
+        
+        // Build Grid HTML
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                let cell = document.createElement('div');
+                cell.className = 'cw-cell';
+                
+                if (grid[y][x] === null) {
+                    cell.classList.add('empty');
+                } else {
+                    let key = `${x},${y}`;
+                    if (cellNumberMap[key]) {
+                        let span = document.createElement('span');
+                        span.className = 'number';
+                        span.innerText = cellNumberMap[key];
+                        cell.appendChild(span);
+                    }
+                    
+                    let input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.dataset.x = x;
+                    input.dataset.y = y;
+                    input.dataset.answer = grid[y][x];
+                    
+                    // Input navigation
+                    input.addEventListener('keyup', (e) => handleInput(e, input));
+                    input.addEventListener('focus', () => highlightClue(x, y));
+                    
+                    cell.appendChild(input);
+                }
+                
+                cwGrid.appendChild(cell);
+            }
+        }
+        
+        // Build Clues HTML
+        let acrossList = document.getElementById('acrossClues');
+        let downList = document.getElementById('downClues');
+        acrossList.innerHTML = '';
+        downList.innerHTML = '';
+        
+        placedWords.forEach(w => {
+            let li = document.createElement('li');
+            li.className = 'clue-item';
+            li.dataset.wordId = w.number;
+            li.dataset.dir = w.dir;
+            li.innerText = `${w.number}. ${w.clue}`;
+            li.onclick = () => focusWord(w);
+            
+            if (w.dir === 0) acrossList.appendChild(li);
+            else downList.appendChild(li);
+        });
+        
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('gameContainer').style.display = 'flex';
+    }
+    
+    function handleInput(e, input) {
+        let val = input.value;
+        if (val.length === 1 && e.key !== 'Backspace') {
+            // Find next input in word
+            // Since we don't know the exact direction strictly from the cell, we default to horizontal 
+            // if we can't find a vertical word covering it, but ideally we track it.
+            // A simple heuristic: just move right.
+            let x = parseInt(input.dataset.x);
+            let y = parseInt(input.dataset.y);
+            
+            let nextInput = document.querySelector(`input[data-x="${x+1}"][data-y="${y}"]`);
+            if (nextInput) nextInput.focus();
+            else {
+                let nextDown = document.querySelector(`input[data-x="${x}"][data-y="${y+1}"]`);
+                if(nextDown) nextDown.focus();
+            }
+        } else if (e.key === 'Backspace') {
+            input.value = '';
+            let x = parseInt(input.dataset.x);
+            let y = parseInt(input.dataset.y);
+            let prevInput = document.querySelector(`input[data-x="${x-1}"][data-y="${y}"]`);
+            if(prevInput) prevInput.focus();
+            else {
+                let prevUp = document.querySelector(`input[data-x="${x}"][data-y="${y-1}"]`);
+                if(prevUp) prevUp.focus();
+            }
+        }
+    }
+    
+    function highlightClue(x, y) {
+        // Find which words contain this cell
+        let wordsAtCell = placedWords.filter(w => {
+            if (w.dir === 0) {
+                return w.y === y && x >= w.x && x < w.x + w.word.length;
+            } else {
+                return w.x === x && y >= w.y && y < w.y + w.word.length;
+            }
+        });
+        
+        document.querySelectorAll('.clue-item').forEach(el => el.classList.remove('active'));
+        wordsAtCell.forEach(w => {
+            let el = document.querySelector(`.clue-item[data-word-id="${w.number}"][data-dir="${w.dir}"]`);
+            if (el) el.classList.add('active');
+        });
+    }
+    
+    function focusWord(w) {
+        let input = document.querySelector(`input[data-x="${w.x}"][data-y="${w.y}"]`);
+        if (input) input.focus();
+    }
+    
+    function checkAnswers() {
+        let allInputs = document.querySelectorAll('.cw-cell input');
+        let allCorrect = true;
+        
+        allInputs.forEach(input => {
+            if (input.value.toUpperCase() === input.dataset.answer.toUpperCase()) {
+                input.parentElement.classList.add('correct');
+            } else {
+                input.parentElement.classList.remove('correct');
+                if (input.value.trim() !== '') {
+                    // visual shake or red text
+                    input.style.color = 'red';
+                    setTimeout(() => input.style.color = '#333', 1000);
+                }
+                allCorrect = false;
+            }
+        });
+        
+        if (allCorrect) {
+            Swal.fire('Chúc mừng!', 'Bạn đã giải đúng toàn bộ ô chữ!', 'success');
+            // Mark all clues solved
+            document.querySelectorAll('.clue-item').forEach(el => el.classList.add('solved'));
+        }
+    }
+
+    function giveHint() {
+        let allInputs = document.querySelectorAll('.cw-cell input');
+        // Find inputs that are either empty or incorrect
+        let potentialHints = [];
+        allInputs.forEach(input => {
+            if (input.value.toUpperCase() !== input.dataset.answer.toUpperCase()) {
+                potentialHints.push(input);
+            }
+        });
+
+        if (potentialHints.length === 0) {
+            Swal.fire('Hoàn thành', 'Bảng đã được điền đúng hoàn toàn!', 'info');
+            return;
+        }
+
+        // Pick a random input to reveal
+        let randomIndex = Math.floor(Math.random() * potentialHints.length);
+        let hintInput = potentialHints[randomIndex];
+
+        // Reveal the correct answer
+        hintInput.value = hintInput.dataset.answer.toUpperCase();
+        
+        // Add a visual flash effect
+        let originalBg = hintInput.style.background;
+        hintInput.style.background = '#fef08a'; // yellow highlight
+        hintInput.style.transition = 'background 0.5s';
+        
+        setTimeout(() => {
+            hintInput.style.background = originalBg;
+        }, 1500);
+        
+        // Focus the input to draw attention
+        hintInput.focus();
+    }
+    
+    // Start Generation
+    setTimeout(generateCrossword, 500);
+
+</script>
+}

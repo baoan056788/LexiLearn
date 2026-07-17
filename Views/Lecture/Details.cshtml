@@ -1,0 +1,154 @@
+@model LexiLearn.ViewModels.LectureReaderViewModel
+@{
+    ViewData["Title"] = Model.Lecture.Title;
+    Layout = null; // Use custom layout for reader to maximize space
+}
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - LexiLearn Reader</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/lecture-reader.css" asp-append-version="true" />
+</head>
+<body class="bg-dark text-light">
+
+    <!-- Reader Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top py-2" style="height: 60px;">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/Lecture">
+                <i class="fas fa-chevron-left me-3 text-muted"></i>
+                <span class="fw-bold text-truncate" style="max-width: 400px;" title="@Model.Lecture.Title">@Model.Lecture.Title</span>
+            </a>
+            
+            <div class="d-flex align-items-center">
+                @if (Model.Quizzes.Any())
+                {
+                    <a href="/Lecture/Quiz/@Model.Lecture.LectureId" class="btn btn-outline-success btn-sm rounded-pill px-3 me-3">
+                        <i class="fas fa-tasks me-1"></i> Lam bai tap (@Model.Quizzes.Count)
+                    </a>
+                }
+                
+                <a href="/Lecture/Download/@Model.Lecture.LectureId" class="btn btn-outline-light btn-sm rounded-pill px-3 me-3" title="Tai xuong ban goc">
+                    <i class="fas fa-download me-1"></i> Doc
+                </a>
+                
+                <div class="dropdown">
+                    <button class="btn btn-link text-light text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="toggleSidebar()"><i class="fas fa-columns me-2"></i> An/Hien Muc luc</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        @if (Model.IsOwner)
+                        {
+                            <li><a class="dropdown-item" href="/Lecture/Edit/@Model.Lecture.LectureId"><i class="fas fa-edit me-2"></i> Sua thong tin</a></li>
+                        }
+                        <li><a class="dropdown-item" href="/Lecture"><i class="fas fa-sign-out-alt me-2"></i> Thoat che do doc</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Reader Layout -->
+    <div class="lecture-reader-container m-3" id="readerContainer">
+        
+        <!-- Sidebar: Table of Contents -->
+        <div class="lecture-sidebar" id="lectureSidebar">
+            <div class="lecture-sidebar-header">
+                <h5><i class="fas fa-list-ul me-2"></i> Muc luc</h5>
+            </div>
+            
+            @if (!Model.Sections.Any())
+            {
+                <div class="p-4 text-center text-muted small">
+                    <i class="fas fa-info-circle mb-2 fa-2x"></i>
+                    <p>Khong tim thay muc luc trong tai lieu nay.</p>
+                </div>
+            }
+            else
+            {
+                <ul class="toc-list p-2">
+                    @foreach (var sec in Model.Sections.OrderBy(s => s.SortOrder))
+                    {
+                        var levelClass = $"toc-level-{sec.HeadingLevel}";
+                        <li class="toc-item p-1">
+                            <a href="#@sec.AnchorId" class="toc-link @levelClass">@sec.Title</a>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <!-- Document Content -->
+        <div class="lecture-content-area" id="contentArea">
+            <div class="lecture-document" id="lectureDocument">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @Html.Raw(Model.Lecture.HtmlContent)
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Data for JS -->
+    <input type="hidden" id="lectureId" value="@Model.Lecture.LectureId" />
+    @Html.AntiForgeryToken()
+    <script type="application/json" id="annotationsData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.UserAnnotations.Select(a => new { a.AnnotationId, a.StartOffset, a.EndOffset, a.Color, a.Note })))
+    </script>
+
+    <!-- Floating Annotation Toolbar -->
+    <div id="annotationToolbar" class="annotation-toolbar">
+        <div class="color-picker">
+            <button class="color-btn" style="background-color: #FFF176;" data-color="#FFF176" title="Vang"></button>
+            <button class="color-btn" style="background-color: #81C784;" data-color="#81C784" title="Xanh la"></button>
+            <button class="color-btn" style="background-color: #64B5F6;" data-color="#64B5F6" title="Xanh duong"></button>
+            <button class="color-btn" style="background-color: #E57373;" data-color="#E57373" title="Do"></button>
+        </div>
+        <button class="annotation-btn" id="addNoteBtn" title="Them ghi chu"><i class="fas fa-comment-alt"></i></button>
+    </div>
+
+    <!-- Note Popup -->
+    <div id="notePopup" class="annotation-note-popup">
+        <h6 class="text-white mb-2 pb-2 border-bottom border-secondary">Them ghi chu</h6>
+        <textarea id="noteText" class="form-control bg-dark text-light border-secondary mb-2" rows="3" placeholder="Viet ghi chu cua ban vao day..."></textarea>
+        <div class="d-flex justify-content-end">
+            <button class="btn btn-sm btn-outline-light me-2" onclick="document.getElementById('notePopup').style.display='none'">Huy</button>
+            <button class="btn btn-sm btn-primary" id="saveNoteBtn">Luu</button>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/annotation-toolbar.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('lectureSidebar');
+            if (sidebar.style.display === 'none') {
+                sidebar.style.display = 'flex';
+            } else {
+                sidebar.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

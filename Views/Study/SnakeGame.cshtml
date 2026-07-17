@@ -1,0 +1,513 @@
+@model LexiLearn.Models.VocabularySet
+@{
+    ViewData["Title"] = "Rắn Săn Từ - " + Model.Title;
+    Layout = "_Layout";
+}
+
+<style>
+    .snake-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        background: #ecfdf5;
+        border: 4px solid #10b981;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+    }
+    
+    #gameCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+    }
+    
+    .food-label {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        background: white;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        pointer-events: none;
+        white-space: nowrap;
+        border: 2px solid #10b981;
+        z-index: 10;
+        margin-top: -10px; /* spacing above the food */
+    }
+
+    .game-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 20;
+    }
+
+    .header-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #10b981;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px 12px 0 0;
+        margin-bottom: 0;
+    }
+
+    .target-word {
+        font-size: 1.5rem;
+        font-weight: bold;
+        background: rgba(255,255,255,0.2);
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+    }
+    
+    .d-pad {
+        display: none;
+    }
+    
+    @@media (max-width: 768px) {
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .d-pad button {
+            border: none;
+            background: #10b981;
+            color: white;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 0 #059669;
+        }
+        .d-pad button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        .up-btn { grid-column: 2; grid-row: 1; }
+        .left-btn { grid-column: 1; grid-row: 2; }
+        .right-btn { grid-column: 3; grid-row: 2; }
+        .down-btn { grid-column: 2; grid-row: 3; }
+    }
+</style>
+
+<div class="container py-4">
+    <div class="mb-3">
+        <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại bộ từ
+        </a>
+    </div>
+
+    <div class="header-panel mb-0 mx-auto" style="max-width: 800px;">
+        <div class="d-flex align-items-center gap-3">
+            <h4 class="mb-0"><i class="fas fa-snake me-2"></i>Rắn Săn Từ</h4>
+            <div class="badge bg-white text-success fs-6">Score: <span id="score">0</span></div>
+        </div>
+        <div class="target-word" id="targetWord">Sẵn sàng!</div>
+    </div>
+
+    <div class="snake-container" id="gameContainer">
+        <!-- Canvas for drawing snake and food icons -->
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        
+        <!-- HTML elements for food text -->
+        <div id="foodLabelsContainer"></div>
+
+        <!-- Overlays -->
+        <div class="game-overlay" id="startScreen">
+            <button class="btn btn-light rounded-circle position-absolute" style="top: 1rem; right: 1rem; width: 45px; height: 45px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="openSettings()" title="Cài đặt">
+                <i class="fas fa-cog"></i>
+            </button>
+            <h2 class="fw-bold text-success mb-3">Rắn Săn Từ Vựng</h2>
+            <p class="text-muted mb-4 text-center px-3">Sử dụng phím mũi tên (hoặc WASD) để di chuyển.<br>Hãy ăn mồi có từ tiếng Anh khớp với nghĩa hiển thị ở trên!</p>
+            <button class="btn btn-success rounded-pill px-5 py-3 fw-bold fs-5 shadow" onclick="startGame()">BẮT ĐẦU CHƠI</button>
+        </div>
+
+        <div class="game-overlay" id="gameOverScreen" style="display:none;">
+            <h2 class="fw-bold text-danger mb-2">GAME OVER</h2>
+            <h4 class="mb-4">Điểm của bạn: <span id="finalScore">0</span></h4>
+            <div class="d-flex gap-3">
+                <button class="btn btn-success rounded-pill px-4 py-2" onclick="startGame()"><i class="fas fa-redo me-2"></i>Chơi lại</button>
+                <a href="/VocabularySet/Details/@Model.SetId" class="btn btn-outline-secondary rounded-pill px-4 py-2">Thoát</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div class="d-pad">
+        <button class="up-btn" onclick="setDirection(0, -1)"><i class="fas fa-caret-up"></i></button>
+        <button class="left-btn" onclick="setDirection(-1, 0)"><i class="fas fa-caret-left"></i></button>
+        <button class="right-btn" onclick="setDirection(1, 0)"><i class="fas fa-caret-right"></i></button>
+        <button class="down-btn" onclick="setDirection(0, 1)"><i class="fas fa-caret-down"></i></button>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1050; justify-content: center; align-items: center;">
+    <div class="bg-white p-4 rounded-4 shadow" style="width: 350px; max-width: 90%;">
+        <h4 class="mb-4 fw-bold text-center">Cài đặt Game Rắn</h4>
+        
+        <div class="mb-3">
+            <label class="fw-bold mb-2">Tốc độ trò chơi:</label>
+            <select id="selSpeed" class="form-select rounded-pill">
+                <option value="200">🟢 Chậm</option>
+                <option value="150" selected>🟡 Bình thường</option>
+                <option value="100">🔴 Nhanh</option>
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label class="fw-bold mb-2">Màu Rắn:</label>
+            <div class="d-flex align-items-center gap-3">
+                <input type="color" id="colorSnake" class="form-control form-control-color" style="width: 60px;" value="#10b981" />
+                <span class="text-muted small">Chọn màu thân rắn</span>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="fw-bold mb-2">Thu phóng màn hình:</label>
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-search-minus text-muted"></i>
+                <input type="range" class="form-range" id="zoomRange" min="50" max="150" step="10" value="100">
+                <i class="fas fa-search-plus text-muted"></i>
+            </div>
+            <div class="text-center small text-muted mt-1"><span id="zoomVal">100</span>%</div>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary w-50 rounded-pill" onclick="closeSettings()">Hủy</button>
+            <button class="btn btn-success w-50 rounded-pill" onclick="saveSettings()">Lưu cài đặt</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const vocabularyData = @Html.Raw(Json.Serialize(Model.Cards.Select(c => new { term = c.Term.Trim(), meaning = c.Meaning })));
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const labelsContainer = document.getElementById('foodLabelsContainer');
+    const targetWordEl = document.getElementById('targetWord');
+    
+    // Grid settings
+    const GRID_SIZE = 25; // 25x25 pixels per grid square
+    const TILE_COUNT_X = canvas.width / GRID_SIZE;
+    const TILE_COUNT_Y = canvas.height / GRID_SIZE;
+    
+    let snake = [];
+    let velocity = { x: 0, y: 0 };
+    let foods = []; // Array of food objects { x, y, term, isCorrect }
+    let currentTarget = null;
+    let score = 0;
+    let gameLoopRef = null;
+    let isPlaying = false;
+    
+    // Settings
+    let baseSpeed = 150;
+    let speed = 150; // ms per frame
+    let snakeColor = '#10b981';
+    let lastRenderTime = 0;
+    
+    document.getElementById('zoomRange').addEventListener('input', function(e) {
+        let val = e.target.value;
+        document.getElementById('zoomVal').innerText = val;
+        document.getElementById('gameContainer').style.transform = `scale(${val / 100})`;
+        document.getElementById('gameContainer').style.transformOrigin = "top center";
+    });
+
+    function loadSettings() {
+        const savedSpeed = localStorage.getItem('snake_speed');
+        const savedColor = localStorage.getItem('snake_color');
+        const savedZoom = localStorage.getItem('snake_zoom');
+        
+        if (savedSpeed) {
+            baseSpeed = parseInt(savedSpeed);
+            document.getElementById('selSpeed').value = savedSpeed;
+        }
+        if (savedColor) {
+            snakeColor = savedColor;
+            document.getElementById('colorSnake').value = savedColor;
+        }
+        if (savedZoom) {
+            document.getElementById('zoomRange').value = savedZoom;
+            document.getElementById('zoomVal').innerText = savedZoom;
+            document.getElementById('gameContainer').style.transform = `scale(${savedZoom / 100})`;
+            document.getElementById('gameContainer').style.transformOrigin = "top center";
+        }
+    }
+    
+    function openSettings() {
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+    
+    function closeSettings() {
+        document.getElementById('settingsModal').style.display = 'none';
+        loadSettings(); // revert changes if not saved
+    }
+    
+    function saveSettings() {
+        const selSpeed = document.getElementById('selSpeed').value;
+        const color = document.getElementById('colorSnake').value;
+        const zoom = document.getElementById('zoomRange').value;
+        
+        baseSpeed = parseInt(selSpeed);
+        snakeColor = color;
+        
+        localStorage.setItem('snake_speed', selSpeed);
+        localStorage.setItem('snake_color', color);
+        localStorage.setItem('snake_zoom', zoom);
+        
+        closeSettings();
+    }
+    
+    loadSettings();
+
+    function resetGame() {
+        snake = [
+            { x: Math.floor(TILE_COUNT_X / 2), y: Math.floor(TILE_COUNT_Y / 2) },
+            { x: Math.floor(TILE_COUNT_X / 2) - 1, y: Math.floor(TILE_COUNT_Y / 2) }
+        ];
+        velocity = { x: 1, y: 0 };
+        score = 0;
+        speed = baseSpeed;
+        document.getElementById('score').innerText = score;
+        spawnFoods();
+    }
+
+    function spawnFoods() {
+        // Pick a target word
+        currentTarget = vocabularyData[Math.floor(Math.random() * vocabularyData.length)];
+        targetWordEl.innerText = currentTarget.meaning;
+        
+        // Pick 2 wrong words
+        let options = [currentTarget];
+        let attempts = 0;
+        while(options.length < 3 && attempts < 50) {
+            let rnd = vocabularyData[Math.floor(Math.random() * vocabularyData.length)];
+            if(!options.find(o => o.term === rnd.term)) {
+                options.push(rnd);
+            }
+            attempts++;
+        }
+        
+        // Shuffle options
+        options.sort(() => Math.random() - 0.5);
+        
+        foods = [];
+        labelsContainer.innerHTML = '';
+        
+        options.forEach(opt => {
+            let pos = getRandomFreePosition();
+            foods.push({
+                x: pos.x,
+                y: pos.y,
+                term: opt.term,
+                isCorrect: opt.term === currentTarget.term
+            });
+            
+            // Create label
+            let label = document.createElement('div');
+            label.className = 'food-label';
+            label.innerText = opt.term;
+            if(opt.term === currentTarget.term) {
+                // optional: add a class for debugging or testing, but keep it same for gameplay
+            }
+            // Position label based on canvas percentage
+            label.style.left = ((pos.x * GRID_SIZE + GRID_SIZE/2) / canvas.width * 100) + '%';
+            label.style.top = ((pos.y * GRID_SIZE) / canvas.height * 100) + '%';
+            
+            labelsContainer.appendChild(label);
+        });
+    }
+    
+    function getRandomFreePosition() {
+        let x, y;
+        let isFree = false;
+        while(!isFree) {
+            x = Math.floor(Math.random() * (TILE_COUNT_X - 4)) + 2;
+            y = Math.floor(Math.random() * (TILE_COUNT_Y - 4)) + 2;
+            
+            // Check snake collision
+            isFree = !snake.some(segment => segment.x === x && segment.y === y);
+            // Check other foods
+            if(isFree) {
+                isFree = !foods.some(f => f.x === x && f.y === y);
+            }
+        }
+        return {x, y};
+    }
+
+    function startGame() {
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('gameOverScreen').style.display = 'none';
+        resetGame();
+        isPlaying = true;
+        lastRenderTime = 0;
+        gameLoopRef = requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver() {
+        isPlaying = false;
+        cancelAnimationFrame(gameLoopRef);
+        document.getElementById('gameOverScreen').style.display = 'flex';
+        document.getElementById('finalScore').innerText = score;
+    }
+
+    function setDirection(x, y) {
+        // Prevent 180 degree turns
+        if (velocity.x !== 0 && x !== 0) return;
+        if (velocity.y !== 0 && y !== 0) return;
+        
+        // Also don't allow setting direction if velocity is same
+        if (velocity.x === x && velocity.y === y) return;
+        
+        velocity = { x, y };
+    }
+
+    window.addEventListener('keydown', e => {
+        if (!isPlaying) return;
+        switch(e.key) {
+            case 'ArrowUp':
+            case 'w':
+            case 'W':
+                setDirection(0, -1);
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+            case 's':
+            case 'S':
+                setDirection(0, 1);
+                e.preventDefault();
+                break;
+            case 'ArrowLeft':
+            case 'a':
+            case 'A':
+                setDirection(-1, 0);
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+            case 'd':
+            case 'D':
+                setDirection(1, 0);
+                e.preventDefault();
+                break;
+        }
+    });
+
+    function update() {
+        // Move snake
+        const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
+        
+        // Wall collision
+        if (head.x < 0 || head.x >= TILE_COUNT_X || head.y < 0 || head.y >= TILE_COUNT_Y) {
+            return gameOver();
+        }
+        
+        // Self collision
+        if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            return gameOver();
+        }
+        
+        snake.unshift(head); // Add new head
+        
+        // Food collision
+        let ateFoodIndex = foods.findIndex(f => f.x === head.x && f.y === head.y);
+        
+        if (ateFoodIndex !== -1) {
+            let eaten = foods[ateFoodIndex];
+            if (eaten.isCorrect) {
+                // Correct!
+                score += 10;
+                document.getElementById('score').innerText = score;
+                // Speed up slightly
+                if(speed > 60) speed -= 2;
+                spawnFoods(); // spawn new words
+            } else {
+                // Wrong food!
+                return gameOver();
+            }
+        } else {
+            // Didn't eat anything, remove tail
+            snake.pop();
+        }
+    }
+
+    function draw() {
+        // Clear canvas
+        ctx.fillStyle = '#ecfdf5';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw food icons
+        foods.forEach(f => {
+            // All foods look the same
+            ctx.fillStyle = '#ef4444'; // Red berry
+            
+            ctx.beginPath();
+            ctx.arc(f.x * GRID_SIZE + GRID_SIZE/2, f.y * GRID_SIZE + GRID_SIZE/2, GRID_SIZE/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add a little leaf
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.arc(f.x * GRID_SIZE + GRID_SIZE/2 + 2, f.y * GRID_SIZE + GRID_SIZE/2 - 8, 4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        // Draw snake
+        snake.forEach((segment, index) => {
+            // Head is darker
+            ctx.fillStyle = index === 0 ? darkenHex(snakeColor, 30) : snakeColor;
+            
+            // Round corners for snake
+            ctx.beginPath();
+            ctx.roundRect(segment.x * GRID_SIZE + 1, segment.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2, 6);
+            ctx.fill();
+            
+            // Eyes for head
+            if(index === 0) {
+                ctx.fillStyle = 'white';
+                let eyeOffsetX = velocity.x === 0 ? 5 : (velocity.x > 0 ? 12 : 5);
+                let eyeOffsetY = velocity.y === 0 ? 5 : (velocity.y > 0 ? 12 : 5);
+                
+                // Draw 2 eyes depending on direction
+                if(velocity.x !== 0) { // moving horizontally
+                    ctx.fillRect(segment.x * GRID_SIZE + eyeOffsetX, segment.y * GRID_SIZE + 5, 4, 4);
+                    ctx.fillRect(segment.x * GRID_SIZE + eyeOffsetX, segment.y * GRID_SIZE + 15, 4, 4);
+                } else { // moving vertically
+                    ctx.fillRect(segment.x * GRID_SIZE + 5, segment.y * GRID_SIZE + eyeOffsetY, 4, 4);
+                    ctx.fillRect(segment.x * GRID_SIZE + 15, segment.y * GRID_SIZE + eyeOffsetY, 4, 4);
+                }
+            }
+        });
+    }
+
+    function gameLoop(currentTime) {
+        if(!isPlaying) return;
+        
+        gameLoopRef = requestAnimationFrame(gameLoop);
+        
+        const secondsSinceLastRender = (currentTime - lastRenderTime);
+        if (secondsSinceLastRender < speed) return;
+        
+        lastRenderTime = currentTime;
+        update();
+        if(isPlaying) draw();
+    }
+    
+    function darkenHex(hex, amount) {
+        if (!hex) return '#000';
+        return '#' + hex.replace(/^#/, '').match(/.{2}/g).map(c => Math.max(0, parseInt(c, 16) - amount).toString(16).padStart(2, '0')).join('');
+    }
+</script>
+}

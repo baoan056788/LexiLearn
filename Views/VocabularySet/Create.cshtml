@@ -49,6 +49,23 @@
                     </div>
 
                     <div class="mb-4">
+                        <label asp-for="ImageOrPdfFile" class="form-label fw-bold">
+                            <i class="fas fa-image me-1 text-primary"></i>Nhập từ ảnh hoặc PDF (Tùy chọn)
+                        </label>
+                        <input asp-for="ImageOrPdfFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" id="imageOrPdfInput" />
+                        <div class="form-text">
+                            Hỗ trợ ảnh (.jpg, .png) và PDF (.pdf). AI sẽ tự động nhận diện bảng từ vựng và trích xuất. <b>Từ đồng nghĩa</b> cũng sẽ được tạo thành từ riêng.
+                        </div>
+                        <div id="filePreview" class="mt-2 d-none">
+                            <img id="previewImg" class="rounded border shadow-sm d-none" style="max-height:200px; max-width:100%;" />
+                            <div id="pdfPreviewLabel" class="d-none p-3 bg-light rounded border d-flex align-items-center gap-2">
+                                <i class="fas fa-file-pdf text-danger fs-4"></i>
+                                <span id="pdfFileName" class="fw-semibold"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
                         <div class="form-check form-switch">
                             <input asp-for="IsPublic" class="form-check-input" />
                             <label asp-for="IsPublic" class="form-check-label">Chia sẻ công khai cho cộng đồng</label>
@@ -56,7 +73,7 @@
                     </div>
 
                     <div class="d-flex gap-3">
-                        <button type="submit" class="btn btn-primary-gradient px-4">
+                        <button type="submit" class="btn btn-primary-gradient px-4" id="createBtn">
                             <i class="fas fa-save me-2"></i>Tạo bộ từ
                         </button>
                         <a href="/VocabularySet/MySets" class="btn btn-outline-secondary px-4">Hủy</a>
@@ -66,3 +83,55 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    (function () {
+        const fileInput = document.getElementById('imageOrPdfInput');
+        const previewContainer = document.getElementById('filePreview');
+        const previewImg = document.getElementById('previewImg');
+        const pdfLabel = document.getElementById('pdfPreviewLabel');
+        const pdfFileName = document.getElementById('pdfFileName');
+        const createBtn = document.getElementById('createBtn');
+        const form = createBtn?.closest('form');
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                previewImg.classList.add('d-none');
+                pdfLabel.classList.add('d-none');
+                previewContainer.classList.add('d-none');
+
+                if (!this.files || !this.files[0]) return;
+                const file = this.files[0];
+
+                previewContainer.classList.remove('d-none');
+
+                if (file.type === 'application/pdf') {
+                    pdfFileName.textContent = file.name;
+                    pdfLabel.classList.remove('d-none');
+                } else if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewImg.src = e.target.result;
+                        previewImg.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', function () {
+                const hasAiFile = fileInput && fileInput.files && fileInput.files.length > 0;
+                if (hasAiFile) {
+                    createBtn.disabled = true;
+                    createBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>AI đang trích xuất từ vựng...';
+                } else {
+                    createBtn.disabled = true;
+                    createBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo...';
+                }
+            });
+        }
+    })();
+</script>
+}
