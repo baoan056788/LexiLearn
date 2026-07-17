@@ -19,6 +19,14 @@
 
             <div class="card shadow-sm border-primary mb-4" style="border-width: 2px;">
                 <div class="card-body p-5">
+                    <div class="d-flex justify-content-end gap-2 mb-4 border-bottom pb-3">
+                        <button type="button" class="btn btn-outline-danger btn-sm fw-bold" id="btn-redo-wrong">
+                            <i class="fas fa-redo-alt me-1"></i> Làm lại câu sai
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm text-dark fw-bold" id="btn-redo-starred">
+                            <i class="fas fa-star me-1"></i> Làm lại câu đánh dấu
+                        </button>
+                    </div>
                     <div id="quizContainer">
                         <input type="hidden" id="lectureId" value="@Model.LectureId" />
 
@@ -355,6 +363,77 @@
                     currentQuizContent = null;
                 }
             });
+
+            // Function to reset specific questions
+            function resetQuestions(filterFn) {
+                let resetCount = 0;
+                Object.keys(savedProgress).forEach(quizIdStr => {
+                    const quizId = parseInt(quizIdStr);
+                    const data = savedProgress[quizIdStr];
+                    
+                    if (filterFn(data)) {
+                        // Reset UI
+                        const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
+                        radios.forEach(r => {
+                            r.disabled = false;
+                            r.checked = false;
+                            const label = document.querySelector(`label[for="${r.id}"]`);
+                            if (label) {
+                                label.classList.remove('bg-success', 'bg-danger', 'text-white');
+                                label.classList.add('text-dark');
+                            }
+                        });
+                        
+                        const explanationDiv = document.getElementById(`explanation_${quizId}`);
+                        if (explanationDiv) {
+                            explanationDiv.classList.add('d-none');
+                            explanationDiv.innerHTML = '';
+                        }
+                        
+                        const btn = document.querySelector(`.check-btn[data-quiz-id="${quizId}"]`);
+                        if (btn) {
+                            btn.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra bằng AI';
+                            btn.disabled = false;
+                        }
+                        
+                        const indexBtn = document.getElementById(`index_btn_${quizId}`);
+                        if (indexBtn) {
+                            indexBtn.classList.remove('btn-success', 'btn-danger', 'text-white');
+                            indexBtn.classList.add('btn-outline-secondary');
+                        }
+                        
+                        // Clear data but keep isFlagged and htmlContent
+                        delete data.selectedAnswer;
+                        delete data.result;
+                        resetCount++;
+                    }
+                });
+                
+                if (resetCount > 0) {
+                    localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+                    alert(`Đã đặt lại ${resetCount} câu hỏi. Bạn có thể làm lại ngay bây giờ!`);
+                } else {
+                    alert('Không tìm thấy câu hỏi nào phù hợp (hoặc bạn chưa làm/chưa kiểm tra).');
+                }
+            }
+
+            const btnRedoWrong = document.getElementById('btn-redo-wrong');
+            if (btnRedoWrong) {
+                btnRedoWrong.addEventListener('click', function() {
+                    if (confirm('Bạn có chắc muốn xóa kết quả và làm lại tất cả các câu đã làm sai?')) {
+                        resetQuestions(data => data.result && data.result.isCorrect === false);
+                    }
+                });
+            }
+
+            const btnRedoStarred = document.getElementById('btn-redo-starred');
+            if (btnRedoStarred) {
+                btnRedoStarred.addEventListener('click', function() {
+                    if (confirm('Bạn có chắc muốn xóa kết quả và làm lại tất cả các câu đã đánh dấu sao?')) {
+                        resetQuestions(data => data.isFlagged === true && (data.result || data.selectedAnswer));
+                    }
+                });
+            }
 
             document.querySelectorAll('.btn-color-pick').forEach(btn => {
                 btn.addEventListener('click', function() {
