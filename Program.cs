@@ -47,6 +47,7 @@ builder.Services.AddScoped<StudyService>();
 builder.Services.AddScoped<TestService>();
 builder.Services.AddScoped<ProgressService>();
 builder.Services.AddScoped<ReviewService>();
+builder.Services.AddScoped<WordParserService>();
 builder.Services.AddHttpClient<GeminiDictionaryService>();
 builder.Services.AddHttpClient<GeminiChatService>();
 builder.Services.AddHttpClient<GeminiVocabExtractService>();

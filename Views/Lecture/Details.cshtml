@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/lecture-reader.css" asp-append-version="true" />
 </head>
@@ -33,15 +34,20 @@
                     </a>
                 }
                 
-                <a href="/Lecture/Download/@Model.Lecture.LectureId" class="btn btn-outline-light btn-sm rounded-pill px-3 me-3" title="Tai xuong ban goc">
+                
+                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#notebookOffcanvas">
+                    <i class="fas fa-book me-1"></i> So tay
+                </button>
+                
+                <a href="/Lecture/Download/@Model.Lecture.LectureId" class="btn btn-outline-secondary btn-sm rounded-pill px-3 me-3" title="Tai xuong ban goc">
                     <i class="fas fa-download me-1"></i> Doc
                 </a>
                 
                 <div class="dropdown">
-                    <button class="btn btn-link text-light text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <button class="btn btn-link text-dark text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-cog"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
                         <li><a class="dropdown-item" href="javascript:void(0)" onclick="toggleSidebar()"><i class="fas fa-columns me-2"></i> An/Hien Muc luc</a></li>
                         <li><hr class="dropdown-divider"></li>
                         @if (Model.IsOwner)
@@ -128,19 +134,92 @@
     </div>
 
     <!-- Note Popup -->
-    <div id="notePopup" class="annotation-note-popup">
-        <h6 class="text-white mb-2 pb-2 border-bottom border-secondary">Them ghi chu</h6>
-        <textarea id="noteText" class="form-control bg-dark text-light border-secondary mb-2" rows="3" placeholder="Viet ghi chu cua ban vao day..."></textarea>
+    <div id="notePopup" class="annotation-note-popup bg-white border shadow-sm">
+        <h6 class="text-dark mb-2 pb-2 border-bottom">Them ghi chu</h6>
+        <textarea id="noteText" class="form-control mb-2" rows="3" placeholder="Viet ghi chu cua ban vao day..."></textarea>
         <div class="d-flex justify-content-end">
-            <button class="btn btn-sm btn-outline-light me-2" onclick="document.getElementById('notePopup').style.display='none'">Huy</button>
+            <button class="btn btn-sm btn-outline-secondary me-2" onclick="document.getElementById('notePopup').style.display='none'">Huy</button>
             <button class="btn btn-sm btn-primary" id="saveNoteBtn">Luu</button>
+        </div>
+    </div>
+
+    <!-- Notebook Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="notebookOffcanvas" aria-labelledby="notebookOffcanvasLabel" style="width: 500px;">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title fw-bold text-dark" id="notebookOffcanvasLabel"><i class="fas fa-book text-primary me-2"></i> So tay ghi chep</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column p-0">
+            <div id="editor-container" class="flex-grow-1" style="border: none; border-bottom: 1px solid #ccc; font-size: 16px;"></div>
+            <div class="p-3 bg-light d-flex justify-content-between align-items-center">
+                <span id="saveStatus" class="text-muted small"><i class="fas fa-check-circle text-success me-1"></i> Da luu</span>
+                <button class="btn btn-primary btn-sm px-4" id="forceSaveBtn">Luu lai</button>
+            </div>
         </div>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <script src="~/js/annotation-toolbar.js"></script>
     <script>
+        // Quill Notebook Logic
+        document.addEventListener("DOMContentLoaded", function() {
+            var quill = new Quill('#editor-container', {
+                theme: 'snow',
+                placeholder: 'Ghi chep kien thuc tai day...',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['clean']
+                    ]
+                }
+            });
+
+            var lectureId = document.getElementById('lectureId').value;
+            var saveStatus = document.getElementById('saveStatus');
+            var saveTimeout;
+
+            // Load Note
+            fetch('/Lecture/GetLectureNote?lectureId=' + lectureId)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success && data.content) {
+                        quill.root.innerHTML = data.content;
+                    }
+                });
+
+            function saveNote() {
+                saveStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-primary me-1"></i> Dang luu...';
+                fetch('/Lecture/SaveLectureNote?lectureId=' + lectureId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(quill.root.innerHTML)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        saveStatus.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Da luu';
+                    }
+                });
+            }
+
+            // Auto-save when typing stops for 2 seconds
+            quill.on('text-change', function() {
+                saveStatus.innerHTML = '<i class="fas fa-pencil-alt text-warning me-1"></i> Dang chinh sua...';
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveNote, 2000);
+            });
+
+            document.getElementById('forceSaveBtn').addEventListener('click', function() {
+                clearTimeout(saveTimeout);
+                saveNote();
+            });
+        });
+
         function toggleSidebar() {
             const sidebar = document.getElementById('lectureSidebar');
             if (sidebar.style.display === 'none') {

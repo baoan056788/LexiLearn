@@ -318,6 +318,47 @@ namespace LexiLearn.Controllers
             return RedirectToAction("Details", new { id = lecture.LectureId });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetLectureNote(int lectureId)
+        {
+            var userId = GetUserId();
+            var note = await _context.StudyNotes
+                .FirstOrDefaultAsync(n => n.LectureId == lectureId && n.UserId == userId);
+            
+            return Json(new { success = true, content = note?.Content ?? "" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveLectureNote(int lectureId, [FromBody] string content)
+        {
+            var userId = GetUserId();
+            var lecture = await _context.Lectures.FindAsync(lectureId);
+            if (lecture == null) return NotFound();
+
+            var note = await _context.StudyNotes
+                .FirstOrDefaultAsync(n => n.LectureId == lectureId && n.UserId == userId);
+
+            if (note == null)
+            {
+                note = new StudyNote
+                {
+                    UserId = userId,
+                    LectureId = lectureId,
+                    Title = "Ghi chú bài giảng: " + lecture.Title,
+                    Content = content ?? ""
+                };
+                _context.StudyNotes.Add(note);
+            }
+            else
+            {
+                note.Content = content ?? "";
+                note.UpdatedAt = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
         // POST: /Lecture/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]

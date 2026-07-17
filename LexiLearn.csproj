@@ -8,6 +8,7 @@
     <InvariantGlobalization>false</InvariantGlobalization>
     <!-- Không tự generate web.config khi publish — dùng web.config sẵn trong project -->
     <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>

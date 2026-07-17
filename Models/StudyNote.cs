@@ -12,6 +12,8 @@ namespace LexiLearn.Models
 
         public int? SetId { get; set; }
 
+        public int? LectureId { get; set; }
+
         [Required, MaxLength(150)]
         public string Title { get; set; } = string.Empty;
 
@@ -35,5 +37,8 @@ namespace LexiLearn.Models
 
         [ForeignKey(nameof(SetId))]
         public VocabularySet? VocabularySet { get; set; }
+
+        [ForeignKey(nameof(LectureId))]
+        public Lecture? Lecture { get; set; }
     }
 }
