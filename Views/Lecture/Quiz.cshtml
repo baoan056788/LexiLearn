@@ -224,6 +224,42 @@
             } catch (e) {
                 console.error("Could not parse saved progress", e);
             }
+
+            function clearQuizVisualState(quizId) {
+                try {
+                    const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
+                    radios.forEach(r => {
+                        r.checked = false;
+                        const label = document.querySelector(`label[for="${r.id}"]`);
+                        if (label) {
+                            label.classList.remove('bg-success', 'bg-danger', 'text-white');
+                            label.classList.add('text-dark');
+                        }
+                    });
+                    
+                    const explanationDiv = document.getElementById(`explanation_${quizId}`);
+                    if (explanationDiv) explanationDiv.classList.add('d-none');
+                    
+                    const btn = document.querySelector(`.check-btn[data-quiz-id="${quizId}"]`);
+                    if (btn) {
+                        btn.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra bằng AI';
+                        btn.classList.remove('btn-secondary');
+                        btn.classList.add('btn-primary');
+                        btn.disabled = false;
+                    }
+                    
+                    const indexBtn = document.getElementById(`index_btn_${quizId}`);
+                    if (indexBtn) {
+                        indexBtn.classList.remove('btn-success', 'btn-danger', 'text-white');
+                        indexBtn.classList.add('btn-outline-secondary');
+                    }
+                    
+                    const qContent = document.getElementById(`qcontent_${quizId}`);
+                    if (qContent) {
+                        qContent.innerHTML = qContent.innerHTML.replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, '');
+                    }
+                } catch(e) { console.error("Error in clearQuizVisualState:", e); }
+            };
             
             // Function to render AI result
             function renderResult(quizId, result, selectedAnswer) {
@@ -249,8 +285,10 @@
                 });
                 
                 const explanationDiv = document.getElementById(`explanation_${quizId}`);
-                explanationDiv.innerHTML = result.explanationHtml;
-                explanationDiv.classList.remove('d-none');
+                if (explanationDiv) {
+                    explanationDiv.innerHTML = `<strong>Giải thích:</strong> ${result.explanationHtml || result.explanation || ''}`;
+                    explanationDiv.classList.remove('d-none');
+                }
                 
                 const btn = document.querySelector(`.check-btn[data-quiz-id="${quizId}"]`);
                 if (btn) {
@@ -404,85 +442,92 @@
             let currentFilter = 'all';
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const filter = this.dataset.filter;
-                    // if (filter === currentFilter) return;
-
-                    const matchingQuizIds = [];
-                    
-                    // 1. Determine which questions match based on localStorage data
-                    Object.keys(savedProgress).forEach(quizIdStr => {
-                        const quizId = parseInt(quizIdStr);
-                        const data = savedProgress[quizIdStr];
-                        if (filter === 'wrong') {
-                            if (data.result && data.result.isCorrect === false) matchingQuizIds.push(quizId);
-                        } else if (filter === 'starred') {
-                            if (data.isFlagged) matchingQuizIds.push(quizId);
-                        }
-                    });
-                    
-                    // 2. Perform the temporary visual reset (if not 'all')
-                    if (filter !== 'all') {
-                        if (matchingQuizIds.length === 0) {
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'info',
-                                    title: 'Không tìm thấy câu hỏi',
-                                    text: 'Không có câu hỏi nào thỏa mãn điều kiện lọc này!',
-                                    confirmButtonColor: '#6366f1'
-                                });
-                            } else {
-                                alert('Không có câu hỏi nào thỏa mãn điều kiện lọc này!');
-                            }
-                            return; 
-                        }
+                    try {
+                        const filter = this.dataset.filter;
+    
+                        const matchingQuizIds = [];
                         
-                        matchingQuizIds.forEach(quizId => {
-                            clearQuizVisualState(quizId);
-                            // We do NOT delete data from savedProgress!
-                        });
-                    } else {
-                        // Restore visual state for all questions when switching back to 'all'
+                        // 1. Determine which questions match based on localStorage data
                         Object.keys(savedProgress).forEach(quizIdStr => {
-                            restoreQuizVisualState(parseInt(quizIdStr));
+                            const quizId = parseInt(quizIdStr);
+                            if (isNaN(quizId)) return;
+                            
+                            const data = savedProgress[quizIdStr];
+                            if (filter === 'wrong') {
+                                if (data.result && data.result.isCorrect === false) matchingQuizIds.push(quizId);
+                            } else if (filter === 'starred') {
+                                if (data.isFlagged) matchingQuizIds.push(quizId);
+                            }
                         });
-                    }
-                    
-                    // 3. Update styling
-                    currentFilter = filter;
-                    document.querySelectorAll('.filter-btn').forEach(b => {
-                        b.classList.remove('btn-primary', 'btn-danger', 'btn-warning', 'shadow-sm');
-                        if (b.dataset.filter === 'all') b.classList.add('btn-outline-primary');
-                        if (b.dataset.filter === 'wrong') b.classList.add('btn-outline-danger');
-                        if (b.dataset.filter === 'starred') b.classList.add('btn-outline-warning', 'text-dark');
-                    });
-                    
-                    this.classList.remove('btn-outline-primary', 'btn-outline-danger', 'btn-outline-warning');
-                    this.classList.add('shadow-sm');
-                    if (this.dataset.filter === 'all') this.classList.add('btn-primary');
-                    if (this.dataset.filter === 'wrong') this.classList.add('btn-danger', 'text-white');
-                    if (this.dataset.filter === 'starred') this.classList.add('btn-warning', 'text-dark');
-                    
-                    // 4. Show/Hide in DOM
-                    document.querySelectorAll('.quiz-item').forEach(item => {
-                        const quizIdStr = item.id.replace('quiz_', '');
-                        const quizId = parseInt(quizIdStr);
                         
-                        let show = false;
-                        if (filter === 'all') show = true;
-                        else if (matchingQuizIds.includes(quizId)) show = true;
-                        
-                        if (show) {
-                            item.classList.remove('d-none');
+                        // 2. Perform the temporary visual reset (if not 'all')
+                        if (filter !== 'all') {
+                            if (matchingQuizIds.length === 0) {
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'info',
+                                        title: 'Không tìm thấy câu hỏi',
+                                        text: 'Không có câu hỏi nào thỏa mãn điều kiện lọc này!',
+                                        confirmButtonColor: '#6366f1'
+                                    });
+                                } else {
+                                    alert('Không có câu hỏi nào thỏa mãn điều kiện lọc này!');
+                                }
+                                return; 
+                            }
+                            
+                            matchingQuizIds.forEach(quizId => {
+                                clearQuizVisualState(quizId);
+                                // We do NOT delete data from savedProgress!
+                            });
                         } else {
-                            item.classList.add('d-none');
+                            // Restore visual state for all questions when switching back to 'all'
+                            Object.keys(savedProgress).forEach(quizIdStr => {
+                                const quizId = parseInt(quizIdStr);
+                                if (!isNaN(quizId)) restoreQuizVisualState(quizId);
+                            });
                         }
                         
-                        const idxBtn = document.getElementById(`index_btn_${quizId}`);
-                        if (idxBtn) {
-                            if (show) idxBtn.classList.remove('d-none');
-                            else idxBtn.classList.add('d-none');
-                        }
-                    });
+                        // 3. Update styling
+                        currentFilter = filter;
+                        document.querySelectorAll('.filter-btn').forEach(b => {
+                            b.classList.remove('btn-primary', 'btn-danger', 'btn-warning', 'shadow-sm');
+                            if (b.dataset.filter === 'all') b.classList.add('btn-outline-primary');
+                            if (b.dataset.filter === 'wrong') b.classList.add('btn-outline-danger');
+                            if (b.dataset.filter === 'starred') b.classList.add('btn-outline-warning', 'text-dark');
+                        });
+                        
+                        this.classList.remove('btn-outline-primary', 'btn-outline-danger', 'btn-outline-warning');
+                        this.classList.add('shadow-sm');
+                        if (this.dataset.filter === 'all') this.classList.add('btn-primary');
+                        if (this.dataset.filter === 'wrong') this.classList.add('btn-danger', 'text-white');
+                        if (this.dataset.filter === 'starred') this.classList.add('btn-warning', 'text-dark');
+                        
+                        // 4. Show/Hide in DOM
+                        document.querySelectorAll('.quiz-item').forEach(item => {
+                            const quizIdStr = item.id.replace('quiz_', '');
+                            const quizId = parseInt(quizIdStr);
+                            
+                            let show = false;
+                            if (filter === 'all') show = true;
+                            else if (matchingQuizIds.includes(quizId)) show = true;
+                            
+                            if (show) {
+                                item.classList.remove('d-none');
+                            } else {
+                                item.classList.add('d-none');
+                            }
+                            
+                            const idxBtn = document.getElementById(`index_btn_${quizId}`);
+                            if (idxBtn) {
+                                if (show) idxBtn.classList.remove('d-none');
+                                else idxBtn.classList.add('d-none');
+                            }
+                        });
+                    } catch (e) {
+                        alert("Lỗi khi lọc: " + e.message);
+                        console.error(e);
+                    }
                 });
             });
 
