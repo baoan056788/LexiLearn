@@ -1,4 +1,4 @@
-﻿@model LexiLearn.ViewModels.LectureQuizViewModel
+@model LexiLearn.ViewModels.LectureQuizViewModel
 @{
     ViewData["Title"] = "Bai tap: " + Model.LectureTitle;
 }
@@ -11,6 +11,9 @@
                 <div>
                     <h2 class="fw-bold mb-0 text-dark">Luyen tap trac nghiem</h2>
                     <p class="text-muted mb-0">Tu bai giang: <a href="/Lecture/Details/@Model.LectureId" class="text-primary text-decoration-none">@Model.LectureTitle</a></p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary p-2 fs-6"><i class="fas fa-list-ol me-1"></i> @Model.TotalQuestions cau hoi</span>
                 </div>
             </div>
 
@@ -212,14 +215,14 @@
                     const quizId = this.getAttribute('data-quiz-id');
                     
                     // Find selected radio
-                    const selectedRadio = document.querySelector(input[name="answers[]"]:checked);
+                    const selectedRadio = document.querySelector(`input[name="answers[${quizId}]"]:checked`);
                     if (!selectedRadio) {
                         alert('Vui lòng chọn một đáp án trước khi kiểm tra!');
                         return;
                     }
                     
                     const selectedAnswer = selectedRadio.value;
-                    const explanationDiv = document.getElementById(explanation_);
+                    const explanationDiv = document.getElementById(`explanation_${quizId}`);
                     
                     // Show loading
                     this.disabled = true;
@@ -246,9 +249,9 @@
                         }
                         
                         // Remove previous coloring
-                        const radios = document.querySelectorAll(input[name="answers[]"]);
+                        const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
                         radios.forEach(r => {
-                            const label = document.querySelector(label[for=""]);
+                            const label = document.querySelector(`label[for="${r.id}"]`);
                             label.classList.remove('bg-success', 'bg-danger', 'text-white', 'text-dark');
                             label.classList.add('text-dark');
                             
@@ -276,7 +279,7 @@
                         this.innerHTML = '<i class="fas fa-check me-1"></i> Đã kiểm tra';
 
                         // Update index button color
-                        const indexBtn = document.getElementById(index_btn_);
+                        const indexBtn = document.getElementById(`index_btn_${quizId}`);
                         if (indexBtn) {
                             indexBtn.classList.remove('btn-outline-secondary');
                             indexBtn.classList.add('text-white');
@@ -297,4 +300,3 @@
         });
     </script>
 }
-
