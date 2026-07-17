@@ -4,11 +4,17 @@
     var items = Model?.ToList() ?? new List<LexiLearn.Models.PinnedItem>();
     var nonDictItems = items.Where(i => i.ItemType != "Dictionary").ToList();
     var hasDict = items.Any(i => i.ItemType == "Dictionary");
+    var hasNotebook = items.Any(i => i.ItemType == "Notebook" && i.Url.Contains(Context.Request.Path));
 }
 
 @if (hasDict)
 {
     <div id="pinned-dict-tab" class="d-none"></div>
+}
+
+@if (hasNotebook)
+{
+    <div id="pinned-notebook-tab" class="d-none"></div>
 }
 
 @if (nonDictItems.Any())
@@ -28,6 +34,10 @@
                             else if (item.ItemType == "Feature")
                             {
                                 <i class="fas fa-gamepad text-warning me-1"></i>
+                            }
+                            else if (item.ItemType == "Notebook")
+                            {
+                                <i class="fas fa-book text-primary me-1"></i>
                             }
                             @item.Title
                         </a>

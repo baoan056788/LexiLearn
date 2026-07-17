@@ -35,7 +35,7 @@
                 }
                 
                 
-                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#notebookOffcanvas">
+                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 me-3" type="button" id="toggleNotebookBtn">
                     <i class="fas fa-book me-1"></i> So tay
                 </button>
                 
@@ -144,10 +144,24 @@
     </div>
 
     <!-- Notebook Offcanvas -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="notebookOffcanvas" aria-labelledby="notebookOffcanvasLabel" style="width: 500px;">
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="notebookOffcanvas" aria-labelledby="notebookOffcanvasLabel" style="width: 500px;" data-bs-backdrop="false" data-bs-scroll="true">
         <div class="offcanvas-header border-bottom">
             <h5 class="offcanvas-title fw-bold text-dark" id="notebookOffcanvasLabel"><i class="fas fa-book text-primary me-2"></i> So tay ghi chep</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <div class="d-flex align-items-center">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <form asp-controller="Pin" asp-action="TogglePin" method="post" class="mb-0 me-2 d-inline-block">
+                        <input type="hidden" name="itemType" value="Notebook" />
+                        <input type="hidden" name="title" value="So tay: @Model.Lecture.Title" />
+                        <input type="hidden" name="url" value="/Lecture/Details/@Model.Lecture.LectureId" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Ghim so tay">
+                            <i class="fas fa-thumbtack"></i>
+                        </button>
+                    </form>
+                }
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
         </div>
         <div class="offcanvas-body d-flex flex-column p-0">
             <div id="editor-container" class="flex-grow-1" style="border: none; border-bottom: 1px solid #ccc; font-size: 16px;"></div>
@@ -217,6 +231,44 @@
             document.getElementById('forceSaveBtn').addEventListener('click', function() {
                 clearTimeout(saveTimeout);
                 saveNote();
+            });
+
+            // Pinning Logic
+            var notebookOffcanvasEl = document.getElementById('notebookOffcanvas');
+            var pinnedNotebookTab = document.getElementById('pinned-notebook-tab');
+            var readerContainer = document.getElementById('readerContainer');
+            var bsOffcanvas = new bootstrap.Offcanvas(notebookOffcanvasEl);
+
+            if (pinnedNotebookTab) {
+                // Change pin button style to solid
+                var pinBtn = document.querySelector('#notebookOffcanvas form button[type="submit"]');
+                if (pinBtn) pinBtn.classList.replace('btn-outline-primary', 'btn-primary');
+                
+                // Show without transition
+                notebookOffcanvasEl.style.transition = 'none';
+                bsOffcanvas.show();
+                
+                // Push content to the left
+                notebookOffcanvasEl.addEventListener('shown.bs.offcanvas', function () {
+                    readerContainer.style.marginRight = '500px';
+                    readerContainer.style.transition = 'margin-right 0.3s ease';
+                });
+                notebookOffcanvasEl.addEventListener('hidden.bs.offcanvas', function () {
+                    readerContainer.style.marginRight = '0';
+                });
+            } else {
+                // Normal behavior when not pinned
+                notebookOffcanvasEl.addEventListener('shown.bs.offcanvas', function () {
+                    readerContainer.style.marginRight = '500px';
+                    readerContainer.style.transition = 'margin-right 0.3s ease';
+                });
+                notebookOffcanvasEl.addEventListener('hidden.bs.offcanvas', function () {
+                    readerContainer.style.marginRight = '0';
+                });
+            }
+
+            document.getElementById('toggleNotebookBtn').addEventListener('click', function() {
+                bsOffcanvas.toggle();
             });
         });
 
