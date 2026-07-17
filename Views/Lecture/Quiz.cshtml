@@ -183,11 +183,99 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const lectureId = document.getElementById('lectureId').value;
+            const storageKey = `lexilearn_quiz_progress_${lectureId}`;
+            
+            // Load saved progress
+            let savedProgress = {};
+            try {
+                const stored = localStorage.getItem(storageKey);
+                if (stored) {
+                    savedProgress = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error("Could not parse saved progress", e);
+            }
+            
+            // Function to render AI result
+            function renderResult(quizId, result, selectedAnswer) {
+                const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
+                radios.forEach(r => {
+                    const label = document.querySelector(`label[for="${r.id}"]`);
+                    label.classList.remove('bg-success', 'bg-danger', 'text-white', 'text-dark');
+                    label.classList.add('text-dark');
+                    
+                    if (r.value === result.correctAnswer) {
+                        label.classList.remove('text-dark');
+                        label.classList.add('bg-success', 'text-white');
+                    }
+                    
+                    if (r.value === selectedAnswer && !result.isCorrect) {
+                        label.classList.remove('text-dark');
+                        label.classList.add('bg-danger', 'text-white');
+                    }
+                    
+                    r.disabled = true;
+                    if (r.value === selectedAnswer) {
+                        r.checked = true;
+                    }
+                });
+                
+                const explanationDiv = document.getElementById(`explanation_${quizId}`);
+                explanationDiv.innerHTML = result.explanationHtml;
+                explanationDiv.classList.remove('d-none');
+                
+                const btn = document.querySelector(`.check-btn[data-quiz-id="${quizId}"]`);
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-check me-1"></i> Đã kiểm tra';
+                    btn.disabled = true;
+                }
+                
+                const indexBtn = document.getElementById(`index_btn_${quizId}`);
+                if (indexBtn) {
+                    indexBtn.classList.remove('btn-outline-secondary');
+                    indexBtn.classList.add('text-white');
+                    if (result.isCorrect) {
+                        indexBtn.classList.add('btn-success');
+                    } else {
+                        indexBtn.classList.add('btn-danger');
+                    }
+                }
+            }
+
+            // Restore state on load
+            Object.keys(savedProgress).forEach(quizIdStr => {
+                const quizId = parseInt(quizIdStr);
+                const data = savedProgress[quizIdStr];
+                
+                if (data.selectedAnswer && !data.result) {
+                    const radio = document.querySelector(`input[name="answers[${quizId}]"][value="${data.selectedAnswer}"]`);
+                    if (radio) radio.checked = true;
+                }
+                
+                if (data.result) {
+                    renderResult(quizId, data.result, data.selectedAnswer);
+                }
+            });
+
+            // Save radio selection when clicked
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const nameAttr = this.getAttribute('name');
+                    const match = nameAttr.match(/answers\[(\d+)\]/);
+                    if (match) {
+                        const quizId = match[1];
+                        if (!savedProgress[quizId]) savedProgress[quizId] = {};
+                        savedProgress[quizId].selectedAnswer = this.value;
+                        localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+                    }
+                });
+            });
+
             document.querySelectorAll('.check-btn').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const quizId = this.getAttribute('data-quiz-id');
                     
-                    // Find selected radio
                     const selectedRadio = document.querySelector(`input[name="answers[${quizId}]"]:checked`);
                     if (!selectedRadio) {
                         alert('Vui lòng chọn một đáp án trước khi kiểm tra!');
@@ -197,7 +285,6 @@
                     const selectedAnswer = selectedRadio.value;
                     const explanationDiv = document.getElementById(`explanation_${quizId}`);
                     
-                    // Show loading
                     this.disabled = true;
                     this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang phân tích...';
                     explanationDiv.classList.add('d-none');
@@ -221,47 +308,13 @@
                             throw new Error(result.error || 'Lỗi hệ thống');
                         }
                         
-                        // Remove previous coloring
-                        const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
-                        radios.forEach(r => {
-                            const label = document.querySelector(`label[for="${r.id}"]`);
-                            label.classList.remove('bg-success', 'bg-danger', 'text-white', 'text-dark');
-                            label.classList.add('text-dark');
-                            
-                            // Color correct answer
-                            if (r.value === result.correctAnswer) {
-                                label.classList.remove('text-dark');
-                                label.classList.add('bg-success', 'text-white');
-                            }
-                            
-                            // Color wrong selected answer
-                            if (r.checked && !result.isCorrect) {
-                                label.classList.remove('text-dark');
-                                label.classList.add('bg-danger', 'text-white');
-                            }
-                            
-                            // Disable inputs after checking
-                            r.disabled = true;
-                        });
+                        // Save result
+                        if (!savedProgress[quizId]) savedProgress[quizId] = {};
+                        savedProgress[quizId].selectedAnswer = selectedAnswer;
+                        savedProgress[quizId].result = result;
+                        localStorage.setItem(storageKey, JSON.stringify(savedProgress));
                         
-                        // Show explanation
-                        explanationDiv.innerHTML = result.explanationHtml;
-                        explanationDiv.classList.remove('d-none');
-                        
-                        // Update button state
-                        this.innerHTML = '<i class="fas fa-check me-1"></i> Đã kiểm tra';
-
-                        // Update index button color
-                        const indexBtn = document.getElementById(`index_btn_${quizId}`);
-                        if (indexBtn) {
-                            indexBtn.classList.remove('btn-outline-secondary');
-                            indexBtn.classList.add('text-white');
-                            if (result.isCorrect) {
-                                indexBtn.classList.add('btn-success');
-                            } else {
-                                indexBtn.classList.add('btn-danger');
-                            }
-                        }
+                        renderResult(quizId, result, selectedAnswer);
                         
                     } catch (error) {
                         alert('Đã xảy ra lỗi: ' + error.message);
