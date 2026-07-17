@@ -409,7 +409,7 @@
 
                     const matchingQuizIds = [];
                     
-                    // 1. Determine which questions match
+                    // 1. Determine which questions match based on localStorage data
                     Object.keys(savedProgress).forEach(quizIdStr => {
                         const quizId = parseInt(quizIdStr);
                         const data = savedProgress[quizIdStr];
@@ -420,65 +420,25 @@
                         }
                     });
                     
-                    // 2. Perform the Hard Reset on matching questions (if not 'all')
+                    // 2. Perform the temporary visual reset (if not 'all')
                     if (filter !== 'all') {
                         if (matchingQuizIds.length === 0) {
                             alert('Không có câu hỏi nào thỏa mãn điều kiện lọc này!');
                             return; 
                         }
                         
-                        if (!confirm('Hệ thống sẽ xóa kết quả và các đoạn highlight của các câu này để bạn làm lại từ đầu. Bạn có đồng ý?')) {
-                            return; // Cancelled
-                        }
-
                         matchingQuizIds.forEach(quizId => {
-                            const data = savedProgress[quizId];
-                            
-                            // Clear UI (Radio, labels, explanation)
-                            const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
-                            radios.forEach(r => {
-                                r.checked = false;
-                                const label = document.querySelector(`label[for="${r.id}"]`);
-                                if (label) {
-                                    label.classList.remove('bg-success', 'bg-danger', 'text-white');
-                                    label.classList.add('text-dark');
-                                }
-                            });
-                            
-                            const explanationDiv = document.getElementById(`explanation_${quizId}`);
-                            if (explanationDiv) explanationDiv.classList.add('d-none');
-                            
-                            const btn = document.querySelector(`.check-btn[data-quiz-id="${quizId}"]`);
-                            if (btn) {
-                                btn.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra bằng AI';
-                                btn.classList.remove('btn-secondary');
-                                btn.classList.add('btn-primary');
-                            }
-                            
-                            const indexBtn = document.getElementById(`index_btn_${quizId}`);
-                            if (indexBtn) {
-                                indexBtn.classList.remove('btn-success', 'btn-danger', 'text-white');
-                                indexBtn.classList.add('btn-outline-secondary');
-                            }
-                            
-                            // Strip highlights
-                            const qContent = document.getElementById(`qcontent_${quizId}`);
-                            if (qContent) {
-                                qContent.innerHTML = qContent.innerHTML.replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, '');
-                            }
-                            
-                            // Clear data
-                            if (data) {
-                                delete data.selectedAnswer;
-                                delete data.result;
-                                delete data.htmlContent;
-                            }
+                            clearQuizVisualState(quizId);
+                            // We do NOT delete data from savedProgress!
                         });
-                        
-                        localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+                    } else {
+                        // Restore visual state for all questions when switching back to 'all'
+                        Object.keys(savedProgress).forEach(quizIdStr => {
+                            restoreQuizVisualState(parseInt(quizIdStr));
+                        });
                     }
                     
-                    // 3. Update styling only after confirmation
+                    // 3. Update styling
                     currentFilter = filter;
                     document.querySelectorAll('.filter-btn').forEach(b => {
                         b.classList.remove('btn-primary', 'btn-danger', 'btn-warning', 'shadow-sm');
