@@ -8,7 +8,7 @@
         <div class="col-md-10">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 class="fw-bold mb-0 text-white">Luyen tap trac nghiem</h2>
+                    <h2 class="fw-bold mb-0 text-dark">Luyen tap trac nghiem</h2>
                     <p class="text-muted mb-0">Tu bai giang: <a href="/Lecture/Details/@Model.LectureId" class="text-primary text-decoration-none">@Model.LectureTitle</a></p>
                 </div>
                 <div class="text-end">
@@ -16,7 +16,7 @@
                 </div>
             </div>
 
-            <div class="card glass-card border-primary mb-4" style="border-width: 2px;">
+            <div class="card shadow-sm border-primary mb-4" style="border-width: 2px;">
                 <div class="card-body p-5">
                     <form asp-action="SubmitQuiz" method="post" id="quizForm">
                         <input type="hidden" name="lectureId" value="@Model.LectureId" />
@@ -24,8 +24,8 @@
                         @for (int i = 0; i < Model.Questions.Count; i++)
                         {
                             var q = Model.Questions[i];
-                            <div class="quiz-item mb-5 pb-4 border-bottom border-secondary">
-                                <h5 class="text-white mb-4">
+                            <div class="quiz-item mb-5 pb-4 border-bottom border-light">
+                                <h5 class="text-dark mb-4">
                                     <span class="badge bg-secondary me-2">Cau @(i + 1)</span> 
                                     @q.QuestionText
                                 </h5>

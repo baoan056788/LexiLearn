@@ -6,9 +6,9 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card glass-card border-warning" style="border-width: 1px;">
-                <div class="card-header border-bottom border-secondary bg-transparent py-3">
-                    <h4 class="mb-0 text-white"><i class="fas fa-edit text-warning me-2"></i> Chinh sua bai giang</h4>
+            <div class="card shadow-sm border-warning" style="border-width: 1px;">
+                <div class="card-header border-bottom bg-transparent py-3">
+                    <h4 class="mb-0 text-dark"><i class="fas fa-edit text-warning me-2"></i> Chinh sua bai giang</h4>
                 </div>
                 <div class="card-body p-4">
                     <form asp-action="Edit" enctype="multipart/form-data" method="post" id="editForm">
@@ -16,21 +16,21 @@
                         <input type="hidden" asp-for="LectureId" />
 
                         <div class="mb-3">
-                            <label asp-for="Title" class="form-label text-light">Tieu de bai giang <span class="text-danger">*</span></label>
-                            <input asp-for="Title" class="form-control bg-dark text-light border-secondary" placeholder="Nhap tieu de bai giang" />
+                            <label asp-for="Title" class="form-label text-dark fw-bold">Tieu de bai giang <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" placeholder="Nhap tieu de bai giang" />
                             <span asp-validation-for="Title" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Description" class="form-label text-light">Mo ta</label>
-                            <textarea asp-for="Description" class="form-control bg-dark text-light border-secondary" rows="3" placeholder="Mo ta ngan gon ve noi dung bai giang..."></textarea>
+                            <label asp-for="Description" class="form-label text-dark fw-bold">Mo ta</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Mo ta ngan gon ve noi dung bai giang..."></textarea>
                             <span asp-validation-for="Description" class="text-danger small"></span>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label asp-for="CategoryId" class="form-label text-light">Danh muc</label>
-                                <select asp-for="CategoryId" class="form-select bg-dark text-light border-secondary">
+                                <label asp-for="CategoryId" class="form-label text-dark fw-bold">Danh muc</label>
+                                <select asp-for="CategoryId" class="form-select">
                                     <option value="">-- Chon danh muc --</option>
                                     @foreach (var item in Model.Categories)
                                     {
@@ -39,8 +39,8 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="CourseId" class="form-label text-light">Khoa hoc (Tuy chon)</label>
-                                <select asp-for="CourseId" class="form-select bg-dark text-light border-secondary">
+                                <label asp-for="CourseId" class="form-label text-dark fw-bold">Khoa hoc (Tuy chon)</label>
+                                <select asp-for="CourseId" class="form-select">
                                     <option value="">-- Khong thuoc khoa hoc --</option>
                                     @foreach (var item in Model.Courses)
                                     {
@@ -51,14 +51,14 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label text-light">Cap nhat File Word (.docx) <span class="text-muted small fw-normal">(Khong bat buoc)</span></label>
+                            <label class="form-label text-dark fw-bold">Cap nhat File Word (.docx) <span class="text-muted small fw-normal">(Khong bat buoc)</span></label>
                             <div class="alert alert-warning bg-transparent border-warning text-warning small p-2 mb-2">
                                 <i class="fas fa-exclamation-triangle me-1"></i> Neu ban tai len file moi, toan bo noi dung, muc luc va cau hoi trac nghiem cu se bi thay the!
                             </div>
-                            <div class="upload-area p-3 text-center border border-2 border-dashed border-secondary rounded bg-dark position-relative" id="dropArea">
+                            <div class="upload-area p-3 text-center border border-2 border-dashed rounded bg-light position-relative" id="dropArea">
                                 <input type="file" asp-for="WordFile" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" id="fileInput" />
                                 <i class="fas fa-file-upload fa-2x text-muted mb-2"></i>
-                                <h6 class="text-light mb-1">Chon file moi de thay the (Hoac keo tha)</h6>
+                                <h6 class="text-dark mb-1">Chon file moi de thay the (Hoac keo tha)</h6>
                                 <p class="text-muted small mb-0" id="fileName">Giu nguyen de khong thay doi file hien tai</p>
                             </div>
                             <span asp-validation-for="WordFile" class="text-danger small mt-1 d-block"></span>
@@ -66,13 +66,13 @@
 
                         <div class="mb-4 form-check form-switch">
                             <input class="form-check-input" type="checkbox" asp-for="IsPublic" id="isPublicSwitch">
-                            <label class="form-check-label text-light" for="isPublicSwitch">
+                            <label class="form-check-label text-dark" for="isPublicSwitch">
                                 <i class="fas fa-globe me-1"></i> Cong khai bai giang nay
                             </label>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
-                            <a asp-action="Details" asp-route-id="@Model.LectureId" class="btn btn-outline-light">Huy</a>
+                            <a asp-action="Details" asp-route-id="@Model.LectureId" class="btn btn-outline-secondary">Huy</a>
                             <button type="submit" class="btn btn-warning text-dark fw-bold px-4" id="submitBtn">
                                 <span class="normal-state"><i class="fas fa-save me-2"></i> Luu thay doi</span>
                                 <span class="loading-state d-none">
