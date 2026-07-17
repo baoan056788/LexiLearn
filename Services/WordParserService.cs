@@ -353,8 +353,8 @@ namespace LexiLearn.Services
 
         private bool TryDetectQuiz(string text, ref string? currentQuestion, ref string? optA, ref string? optB, ref string? optC, ref string? optD, List<LectureQuiz> quizzes, int sectionId)
         {
-            // Detect question: starts with "Câu", "Cau", or "Question" followed by number
-            var questionMatch = Regex.Match(text, @"^(?:C[aâ]u|Question)\s*\d+[.:)\s]", RegexOptions.IgnoreCase);
+            // Detect question: starts with "Câu", "Cau", "Question" followed by number, OR just a number "1. "
+            var questionMatch = Regex.Match(text, @"^(?:(?:C[aâ]u|Question)\s*)?\d+[\.\:\)\s]+(.*)", RegexOptions.IgnoreCase);
             if (questionMatch.Success)
             {
                 FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionId);
@@ -364,11 +364,40 @@ namespace LexiLearn.Services
 
             if (currentQuestion != null)
             {
-                var optionMatch = Regex.Match(text, @"^\s*([A-D])[.):]", RegexOptions.IgnoreCase);
+                // Check if all A,B,C,D are on the same line
+                var sameLineOptions = Regex.Match(text, @"^\s*A[\.\:\)]\s*(.+?)\s+B[\.\:\)]\s*(.+?)\s+C[\.\:\)]\s*(.+?)\s+D[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
+                if (sameLineOptions.Success)
+                {
+                    optA = sameLineOptions.Groups[1].Value.Trim();
+                    optB = sameLineOptions.Groups[2].Value.Trim();
+                    optC = sameLineOptions.Groups[3].Value.Trim();
+                    optD = sameLineOptions.Groups[4].Value.Trim();
+                    return true;
+                }
+
+                // Check 2 options on same line
+                var twoOptionsAB = Regex.Match(text, @"^\s*A[\.\:\)]\s*(.+?)\s+B[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
+                if (twoOptionsAB.Success)
+                {
+                    optA = twoOptionsAB.Groups[1].Value.Trim();
+                    optB = twoOptionsAB.Groups[2].Value.Trim();
+                    return true;
+                }
+                
+                var twoOptionsCD = Regex.Match(text, @"^\s*C[\.\:\)]\s*(.+?)\s+D[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
+                if (twoOptionsCD.Success)
+                {
+                    optC = twoOptionsCD.Groups[1].Value.Trim();
+                    optD = twoOptionsCD.Groups[2].Value.Trim();
+                    return true;
+                }
+
+                // Single option per line
+                var optionMatch = Regex.Match(text, @"^\s*([A-D])[\.\:\)]\s*(.*)", RegexOptions.IgnoreCase);
                 if (optionMatch.Success)
                 {
                     var letter = optionMatch.Groups[1].Value.ToUpper();
-                    var optionText = text.Substring(optionMatch.Length).Trim();
+                    var optionText = optionMatch.Groups[2].Value.Trim();
                     switch (letter)
                     {
                         case "A": optA = optionText; break;
@@ -376,6 +405,13 @@ namespace LexiLearn.Services
                         case "C": optC = optionText; break;
                         case "D": optD = optionText; break;
                     }
+                    return true;
+                }
+
+                // If not an option, and we haven't seen option A yet, it might be a multi-line question
+                if (optA == null && !string.IsNullOrWhiteSpace(text))
+                {
+                    currentQuestion += "<br/>" + text;
                     return true;
                 }
             }
