@@ -405,7 +405,7 @@
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const filter = this.dataset.filter;
-                    if (filter === currentFilter) return;
+                    // if (filter === currentFilter) return;
 
                     const matchingQuizIds = [];
                     
@@ -423,12 +423,16 @@
                     // 2. Perform the temporary visual reset (if not 'all')
                     if (filter !== 'all') {
                         if (matchingQuizIds.length === 0) {
-                            Swal.fire({
-                                icon: 'info',
-                                title: 'Không tìm thấy câu hỏi',
-                                text: 'Không có câu hỏi nào thỏa mãn điều kiện lọc này!',
-                                confirmButtonColor: '#6366f1'
-                            });
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Không tìm thấy câu hỏi',
+                                    text: 'Không có câu hỏi nào thỏa mãn điều kiện lọc này!',
+                                    confirmButtonColor: '#6366f1'
+                                });
+                            } else {
+                                alert('Không có câu hỏi nào thỏa mãn điều kiện lọc này!');
+                            }
                             return; 
                         }
                         
@@ -494,12 +498,16 @@
                     try {
                         currentHighlightRange.surroundContents(mark);
                     } catch(e) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Không thể highlight',
-                            text: 'Vui lòng bôi đen đoạn văn bản liền mạch không chứa ngắt dòng hoặc cấu trúc phức tạp.',
-                            confirmButtonColor: '#6366f1'
-                        });
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Không thể highlight',
+                                text: 'Vui lòng bôi đen đoạn văn bản liền mạch không chứa ngắt dòng hoặc cấu trúc phức tạp.',
+                                confirmButtonColor: '#6366f1'
+                            });
+                        } else {
+                            alert('Vui lòng bôi đen đoạn văn bản liền mạch không chứa ngắt dòng hoặc cấu trúc phức tạp.');
+                        }
                     }
                     
                     window.getSelection().removeAllRanges();
@@ -550,12 +558,16 @@
                     
                     const selectedRadio = document.querySelector(`input[name="answers[${quizId}]"]:checked`);
                     if (!selectedRadio) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Thiếu thông tin',
-                            text: 'Vui lòng chọn một đáp án trước khi kiểm tra!',
-                            confirmButtonColor: '#6366f1'
-                        });
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Thiếu thông tin',
+                                text: 'Vui lòng chọn một đáp án trước khi kiểm tra!',
+                                confirmButtonColor: '#6366f1'
+                            });
+                        } else {
+                            alert('Vui lòng chọn một đáp án trước khi kiểm tra!');
+                        }
                         return;
                     }
                     
@@ -594,12 +606,16 @@
                         renderResult(quizId, result, selectedAnswer);
                         
                     } catch (error) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Lỗi hệ thống',
-                            text: 'Đã xảy ra lỗi: ' + error.message,
-                            confirmButtonColor: '#6366f1'
-                        });
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi hệ thống',
+                                text: 'Đã xảy ra lỗi: ' + error.message,
+                                confirmButtonColor: '#6366f1'
+                            });
+                        } else {
+                            alert('Đã xảy ra lỗi: ' + error.message);
+                        }
                         this.disabled = false;
                         this.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra bằng AI';
                     }
