@@ -26,9 +26,12 @@
                         {
                             var q = Model.Questions[i];
                             <div class="quiz-item mb-5 pb-4 border-bottom border-light" id="quiz_@q.QuizId">
-                                <h5 class="text-dark mb-4">
-                                    <span class="badge bg-secondary me-2">Cau @(i + 1)</span> 
-                                    @q.QuestionText
+                                <h5 class="text-dark mb-4 d-flex align-items-start">
+                                    <span class="badge bg-secondary me-2 mt-1">Cau @(i + 1)</span> 
+                                    <span class="q-content flex-grow-1" data-quiz-id="@q.QuizId" id="qcontent_@q.QuizId">@q.QuestionText</span>
+                                    <button type="button" class="btn btn-sm btn-outline-warning ms-2 flag-btn" data-quiz-id="@q.QuizId" title="Đánh dấu câu quan trọng">
+                                        <i class="far fa-star"></i>
+                                    </button>
                                 </h5>
 
                                 <div class="options-container ms-3">
@@ -102,8 +105,9 @@
                         @for (int i = 0; i < Model.Questions.Count; i++)
                         {
                             var q = Model.Questions[i];
-                            <a href="#quiz_@q.QuizId" id="index_btn_@q.QuizId" class="btn btn-outline-secondary btn-sm" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; border-radius: 8px;">
+                            <a href="#quiz_@q.QuizId" id="index_btn_@q.QuizId" class="btn btn-outline-secondary btn-sm position-relative" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; border-radius: 8px;">
                                 @(i + 1)
+                                <i class="fas fa-star text-warning position-absolute d-none flag-icon" id="index_star_@q.QuizId" style="top: -5px; right: -5px; font-size: 14px; text-shadow: 0 0 2px rgba(0,0,0,0.5);"></i>
                             </a>
                         }
                     </div>
@@ -117,6 +121,10 @@
             </div>
         </div>
     </div>
+</div>
+
+<div id="highlight-tooltip" class="position-absolute d-none" style="z-index: 1000; padding: 5px; background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+    <button class="btn btn-sm btn-warning rounded-circle shadow-sm" id="btn-do-highlight" title="Tô sáng (Highlight)"><i class="fas fa-highlighter"></i></button>
 </div>
 
 <style>
@@ -177,6 +185,19 @@
     @@keyframes highlight {
         0% { background-color: rgba(99, 102, 241, 0.2); }
         100% { background-color: transparent; }
+    }
+
+    mark {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    mark:hover {
+        background-color: #ffc107 !important;
+        opacity: 0.8;
+    }
+    
+    .flag-btn i.fas {
+        color: #ffc107;
     }
 </style>
 
@@ -255,6 +276,118 @@
                 
                 if (data.result) {
                     renderResult(quizId, data.result, data.selectedAnswer);
+                }
+
+                if (data.isFlagged) {
+                    const flagBtn = document.querySelector(`.flag-btn[data-quiz-id="${quizId}"] i`);
+                    if (flagBtn) {
+                        flagBtn.classList.remove('far');
+                        flagBtn.classList.add('fas');
+                    }
+                    const indexStar = document.getElementById(`index_star_${quizId}`);
+                    if (indexStar) indexStar.classList.remove('d-none');
+                }
+
+                if (data.htmlContent) {
+                    const qContent = document.getElementById(`qcontent_${quizId}`);
+                    if (qContent) qContent.innerHTML = data.htmlContent;
+                }
+            });
+
+            // Handle Flagging
+            document.querySelectorAll('.flag-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const quizId = this.getAttribute('data-quiz-id');
+                    const icon = this.querySelector('i');
+                    const isFlagged = icon.classList.contains('fas');
+                    
+                    if (isFlagged) {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                    } else {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                    }
+                    
+                    const indexStar = document.getElementById(`index_star_${quizId}`);
+                    if (indexStar) {
+                        if (isFlagged) indexStar.classList.add('d-none');
+                        else indexStar.classList.remove('d-none');
+                    }
+
+                    if (!savedProgress[quizId]) savedProgress[quizId] = {};
+                    savedProgress[quizId].isFlagged = !isFlagged;
+                    localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+                });
+            });
+
+            // Handle Highlighting
+            const tooltip = document.getElementById('highlight-tooltip');
+            let currentHighlightRange = null;
+            let currentQuizContent = null;
+
+            document.addEventListener('mouseup', function(e) {
+                const selection = window.getSelection();
+                
+                if (selection.toString().trim() !== '') {
+                    const range = selection.getRangeAt(0);
+                    const qContent = range.commonAncestorContainer.nodeType === 3 
+                        ? range.commonAncestorContainer.parentElement.closest('.q-content')
+                        : range.commonAncestorContainer.closest('.q-content');
+                        
+                    if (qContent) {
+                        const rect = range.getBoundingClientRect();
+                        tooltip.style.top = (window.scrollY + rect.top - 45) + 'px';
+                        tooltip.style.left = (window.scrollX + rect.left + (rect.width / 2) - 15) + 'px';
+                        tooltip.classList.remove('d-none');
+                        
+                        currentHighlightRange = range;
+                        currentQuizContent = qContent;
+                        return;
+                    }
+                }
+                
+                if (!e.target.closest('#highlight-tooltip')) {
+                    tooltip.classList.add('d-none');
+                    currentHighlightRange = null;
+                    currentQuizContent = null;
+                }
+            });
+
+            document.getElementById('btn-do-highlight').addEventListener('click', function() {
+                if (!currentHighlightRange || !currentQuizContent) return;
+                
+                const mark = document.createElement('mark');
+                mark.className = 'bg-warning text-dark rounded px-1 fw-bold';
+                
+                try {
+                    currentHighlightRange.surroundContents(mark);
+                } catch(e) {
+                    alert('Vui lòng bôi đen đoạn văn bản liền mạch không chứa ngắt dòng hoặc cấu trúc phức tạp.');
+                }
+                
+                window.getSelection().removeAllRanges();
+                tooltip.classList.add('d-none');
+                
+                const quizId = currentQuizContent.dataset.quizId;
+                if (!savedProgress[quizId]) savedProgress[quizId] = {};
+                savedProgress[quizId].htmlContent = currentQuizContent.innerHTML;
+                localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+            });
+
+            // Remove highlight on click
+            document.addEventListener('click', function(e) {
+                if (e.target.tagName === 'MARK') {
+                    const text = document.createTextNode(e.target.textContent);
+                    const qContent = e.target.closest('.q-content');
+                    e.target.parentNode.replaceChild(text, e.target);
+                    
+                    if (qContent) {
+                        const quizId = qContent.dataset.quizId;
+                        if (!savedProgress[quizId]) savedProgress[quizId] = {};
+                        savedProgress[quizId].htmlContent = qContent.innerHTML;
+                        localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+                    }
                 }
             });
 
