@@ -46,7 +46,7 @@ namespace LexiLearn.Services
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Gemini quiz evaluation failed with {StatusCode}: {Response}", response.StatusCode, responseText);
-                throw new Exception("Gemini API request failed.");
+                throw new Exception("Gemini API request failed. Status: " + response.StatusCode + ". Response: " + responseText);
             }
 
             var generatedJson = ExtractGeneratedText(responseText);
