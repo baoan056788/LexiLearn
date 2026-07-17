@@ -123,8 +123,11 @@
     </div>
 </div>
 
-<div id="highlight-tooltip" class="position-absolute d-none" style="z-index: 1000; padding: 5px; background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-    <button class="btn btn-sm btn-warning rounded-circle shadow-sm" id="btn-do-highlight" title="Tô sáng (Highlight)"><i class="fas fa-highlighter"></i></button>
+<div id="highlight-tooltip" class="position-absolute d-none" style="z-index: 1000; padding: 8px 12px; background: white; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #eee; display: flex; gap: 10px; align-items: center;">
+    <button class="btn-color-pick shadow-sm" style="background-color: #FFF176; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: transform 0.2s;" data-color="#FFF176" title="Vàng" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></button>
+    <button class="btn-color-pick shadow-sm" style="background-color: #81C784; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: transform 0.2s;" data-color="#81C784" title="Xanh lá" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></button>
+    <button class="btn-color-pick shadow-sm" style="background-color: #64B5F6; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: transform 0.2s;" data-color="#64B5F6" title="Xanh dương" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></button>
+    <button class="btn-color-pick shadow-sm" style="background-color: #E57373; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: transform 0.2s;" data-color="#E57373" title="Đỏ" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></button>
 </div>
 
 <style>
@@ -189,11 +192,10 @@
 
     mark {
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: opacity 0.2s;
     }
     mark:hover {
-        background-color: #ffc107 !important;
-        opacity: 0.8;
+        opacity: 0.7;
     }
     
     .flag-btn i.fas {
@@ -354,25 +356,30 @@
                 }
             });
 
-            document.getElementById('btn-do-highlight').addEventListener('click', function() {
-                if (!currentHighlightRange || !currentQuizContent) return;
-                
-                const mark = document.createElement('mark');
-                mark.className = 'bg-warning text-dark rounded px-1 fw-bold';
-                
-                try {
-                    currentHighlightRange.surroundContents(mark);
-                } catch(e) {
-                    alert('Vui lòng bôi đen đoạn văn bản liền mạch không chứa ngắt dòng hoặc cấu trúc phức tạp.');
-                }
-                
-                window.getSelection().removeAllRanges();
-                tooltip.classList.add('d-none');
-                
-                const quizId = currentQuizContent.dataset.quizId;
-                if (!savedProgress[quizId]) savedProgress[quizId] = {};
-                savedProgress[quizId].htmlContent = currentQuizContent.innerHTML;
-                localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+            document.querySelectorAll('.btn-color-pick').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!currentHighlightRange || !currentQuizContent) return;
+                    
+                    const color = this.getAttribute('data-color');
+                    const mark = document.createElement('mark');
+                    mark.style.backgroundColor = color;
+                    mark.className = 'text-dark rounded px-1 fw-bold';
+                    
+                    try {
+                        currentHighlightRange.surroundContents(mark);
+                    } catch(e) {
+                        alert('Vui lòng bôi đen đoạn văn bản liền mạch không chứa ngắt dòng hoặc cấu trúc phức tạp.');
+                    }
+                    
+                    window.getSelection().removeAllRanges();
+                    tooltip.classList.add('d-none');
+                    currentHighlightRange = null;
+                    
+                    const quizId = currentQuizContent.dataset.quizId;
+                    if (!savedProgress[quizId]) savedProgress[quizId] = {};
+                    savedProgress[quizId].htmlContent = currentQuizContent.innerHTML;
+                    localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+                });
             });
 
             // Remove highlight on click
