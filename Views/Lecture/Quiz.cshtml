@@ -308,10 +308,10 @@
                 }
             }
 
-            // Restore state on load
-            Object.keys(savedProgress).forEach(quizIdStr => {
-                const quizId = parseInt(quizIdStr);
-                const data = savedProgress[quizIdStr];
+            function restoreQuizVisualState(quizId) {
+                clearQuizVisualState(quizId);
+                const data = savedProgress[quizId];
+                if (!data) return;
                 
                 if (data.selectedAnswer && !data.result) {
                     const radio = document.querySelector(`input[name="answers[${quizId}]"][value="${data.selectedAnswer}"]`);
@@ -336,6 +336,12 @@
                     const qContent = document.getElementById(`qcontent_${quizId}`);
                     if (qContent) qContent.innerHTML = data.htmlContent;
                 }
+            }
+
+            // Restore state on load
+            Object.keys(savedProgress).forEach(quizIdStr => {
+                const quizId = parseInt(quizIdStr);
+                if (!isNaN(quizId)) restoreQuizVisualState(quizId);
             });
 
             // Handle Flagging
