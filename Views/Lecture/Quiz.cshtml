@@ -19,14 +19,6 @@
 
             <div class="card shadow-sm border-primary mb-4" style="border-width: 2px;">
                 <div class="card-body p-5">
-                    <div class="d-flex justify-content-end gap-2 mb-4 border-bottom pb-3">
-                        <button type="button" class="btn btn-outline-danger btn-sm fw-bold" id="btn-redo-wrong">
-                            <i class="fas fa-redo-alt me-1"></i> Làm lại câu sai
-                        </button>
-                        <button type="button" class="btn btn-outline-warning btn-sm text-dark fw-bold" id="btn-redo-starred">
-                            <i class="fas fa-star me-1"></i> Làm lại câu đánh dấu
-                        </button>
-                    </div>
                     <div id="quizContainer">
                         <input type="hidden" id="lectureId" value="@Model.LectureId" />
 
@@ -109,7 +101,12 @@
                     <small class="text-white-50">Tổng cộng @Model.TotalQuestions câu</small>
                 </div>
                 <div class="card-body bg-light">
-                    <div class="d-flex flex-wrap gap-2 mb-3">
+                    <div class="mb-3 d-flex flex-wrap gap-1 border-bottom pb-3">
+                        <button class="btn btn-sm btn-primary flex-grow-1 filter-btn fw-bold shadow-sm" data-filter="all">Tất cả</button>
+                        <button class="btn btn-sm btn-outline-danger flex-grow-1 filter-btn fw-bold" data-filter="wrong">Làm lại câu sai</button>
+                        <button class="btn btn-sm btn-outline-warning flex-grow-1 filter-btn text-dark fw-bold" data-filter="starred">Câu gắn sao</button>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3" id="indexContainer">
                         @for (int i = 0; i < Model.Questions.Count; i++)
                         {
                             var q = Model.Questions[i];
@@ -246,7 +243,6 @@
                         label.classList.add('bg-danger', 'text-white');
                     }
                     
-                    r.disabled = true;
                     if (r.value === selectedAnswer) {
                         r.checked = true;
                     }
@@ -364,36 +360,30 @@
                 }
             });
 
-            // Function to reset specific questions
-            function resetQuestions(filterFn) {
-                let resetCount = 0;
-                Object.keys(savedProgress).forEach(quizIdStr => {
-                    const quizId = parseInt(quizIdStr);
-                    const data = savedProgress[quizIdStr];
-                    
-                    if (filterFn(data)) {
-                        // Reset UI
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const nameAttr = this.getAttribute('name');
+                    const match = nameAttr.match(/answers\[(\d+)\]/);
+                    if (match) {
+                        const quizId = match[1];
+                        
+                        // Clear visual state to unlock question for re-checking
                         const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
                         radios.forEach(r => {
-                            r.disabled = false;
-                            r.checked = false;
                             const label = document.querySelector(`label[for="${r.id}"]`);
-                            if (label) {
-                                label.classList.remove('bg-success', 'bg-danger', 'text-white');
-                                label.classList.add('text-dark');
-                            }
+                            label.classList.remove('bg-success', 'bg-danger', 'text-white');
+                            label.classList.add('text-dark');
                         });
                         
                         const explanationDiv = document.getElementById(`explanation_${quizId}`);
-                        if (explanationDiv) {
-                            explanationDiv.classList.add('d-none');
-                            explanationDiv.innerHTML = '';
-                        }
+                        if (explanationDiv) explanationDiv.classList.add('d-none');
                         
                         const btn = document.querySelector(`.check-btn[data-quiz-id="${quizId}"]`);
                         if (btn) {
-                            btn.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra bằng AI';
+                            btn.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra lại bằng AI';
                             btn.disabled = false;
+                            btn.classList.remove('btn-secondary');
+                            btn.classList.add('btn-primary');
                         }
                         
                         const indexBtn = document.getElementById(`index_btn_${quizId}`);
@@ -401,39 +391,67 @@
                             indexBtn.classList.remove('btn-success', 'btn-danger', 'text-white');
                             indexBtn.classList.add('btn-outline-secondary');
                         }
+
+                        if (!savedProgress[quizId]) savedProgress[quizId] = {};
+                        savedProgress[quizId].selectedAnswer = this.value;
+                        if (savedProgress[quizId].result) delete savedProgress[quizId].result;
+                        localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+                    }
+                });
+            });
+
+            // Filter logic
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('btn-primary', 'btn-danger', 'btn-warning', 'shadow-sm');
+                        if (b.dataset.filter === 'all') b.classList.add('btn-outline-primary');
+                        if (b.dataset.filter === 'wrong') b.classList.add('btn-outline-danger');
+                        if (b.dataset.filter === 'starred') b.classList.add('btn-outline-warning', 'text-dark');
+                    });
+                    
+                    this.classList.remove('btn-outline-primary', 'btn-outline-danger', 'btn-outline-warning');
+                    this.classList.add('shadow-sm');
+                    if (this.dataset.filter === 'all') this.classList.add('btn-primary');
+                    if (this.dataset.filter === 'wrong') this.classList.add('btn-danger', 'text-white');
+                    if (this.dataset.filter === 'starred') this.classList.add('btn-warning', 'text-dark');
+                    
+                    const filter = this.dataset.filter;
+                    let visibleCount = 0;
+                    
+                    document.querySelectorAll('.quiz-item').forEach(item => {
+                        const quizId = item.id.replace('quiz_', '');
+                        const data = savedProgress[quizId] || {};
+                        let show = false;
                         
-                        // Clear data but keep isFlagged and htmlContent
-                        delete data.selectedAnswer;
-                        delete data.result;
-                        resetCount++;
+                        if (filter === 'all') show = true;
+                        else if (filter === 'wrong') {
+                            if (data.result && data.result.isCorrect === false) show = true;
+                        }
+                        else if (filter === 'starred') {
+                            if (data.isFlagged) show = true;
+                        }
+                        
+                        if (show) {
+                            item.classList.remove('d-none');
+                            visibleCount++;
+                        }
+                        else {
+                            item.classList.add('d-none');
+                        }
+                        
+                        const idxBtn = document.getElementById(`index_btn_${quizId}`);
+                        if (idxBtn) {
+                            if (show) idxBtn.classList.remove('d-none');
+                            else idxBtn.classList.add('d-none');
+                        }
+                    });
+                    
+                    if (visibleCount === 0 && filter !== 'all') {
+                        alert('Không có câu hỏi nào thỏa mãn điều kiện lọc này!');
                     }
                 });
-                
-                if (resetCount > 0) {
-                    localStorage.setItem(storageKey, JSON.stringify(savedProgress));
-                    alert(`Đã đặt lại ${resetCount} câu hỏi. Bạn có thể làm lại ngay bây giờ!`);
-                } else {
-                    alert('Không tìm thấy câu hỏi nào phù hợp (hoặc bạn chưa làm/chưa kiểm tra).');
-                }
-            }
-
-            const btnRedoWrong = document.getElementById('btn-redo-wrong');
-            if (btnRedoWrong) {
-                btnRedoWrong.addEventListener('click', function() {
-                    if (confirm('Bạn có chắc muốn xóa kết quả và làm lại tất cả các câu đã làm sai?')) {
-                        resetQuestions(data => data.result && data.result.isCorrect === false);
-                    }
-                });
-            }
-
-            const btnRedoStarred = document.getElementById('btn-redo-starred');
-            if (btnRedoStarred) {
-                btnRedoStarred.addEventListener('click', function() {
-                    if (confirm('Bạn có chắc muốn xóa kết quả và làm lại tất cả các câu đã đánh dấu sao?')) {
-                        resetQuestions(data => data.isFlagged === true && (data.result || data.selectedAnswer));
-                    }
-                });
-            }
+            });
 
             document.querySelectorAll('.btn-color-pick').forEach(btn => {
                 btn.addEventListener('click', function() {
