@@ -118,10 +118,7 @@ namespace LexiLearn.Services
 
                     // Check for quiz questions
                     var trimmedText = text.Trim();
-                    if (TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, 0))
-                    {
-                        continue;
-                    }
+                    TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, 0);
 
                     // Check for images in paragraph
                     var hasImage = para.Descendants<DocumentFormat.OpenXml.Drawing.Blip>().Any();
@@ -408,11 +405,19 @@ namespace LexiLearn.Services
                     return true;
                 }
 
-                // If not an option, and we haven't seen option A yet, it might be a multi-line question
-                if (optA == null && !string.IsNullOrWhiteSpace(text))
+                // If we get here, it means the line is NOT an option.
+                // This implies the currentQuestion was just a numbered heading or normal text.
+                // We should clear the state unless we already have some options (maybe we're at the end of a quiz).
+                // Wait, if we already have A and B, we shouldn't clear, we should Flush!
+                if (optA != null && optB != null)
                 {
-                    currentQuestion += "<br/>" + text;
-                    return true;
+                    FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionId);
+                }
+                else
+                {
+                    // It was a false alarm (e.g., a heading)
+                    currentQuestion = null;
+                    optA = optB = optC = optD = null;
                 }
             }
 
