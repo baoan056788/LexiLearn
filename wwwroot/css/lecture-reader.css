@@ -1,11 +1,11 @@
 :root {
-    --reader-bg: #1e1e24;
-    --reader-text: #e0e0e0;
-    --reader-sidebar: #25252b;
-    --reader-border: #33333d;
-    --reader-highlight: rgba(255, 241, 118, 0.3);
-    --reader-primary: #6366f1;
-    --reader-accent: #8b5cf6;
+    --reader-bg: #f8f9fa;
+    --reader-text: #212529;
+    --reader-sidebar: #ffffff;
+    --reader-border: #dee2e6;
+    --reader-highlight: rgba(255, 241, 118, 0.8);
+    --reader-primary: #0d6efd;
+    --reader-accent: #0b5ed7;
 }
 
 .lecture-reader-container {
@@ -15,7 +15,7 @@
     background: var(--reader-bg);
     color: var(--reader-text);
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     margin-bottom: 2rem;
 }
 
@@ -49,11 +49,11 @@
 
 .toc-item {
     padding: 10px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid var(--reader-border);
 }
 
 .toc-link {
-    color: #aaa;
+    color: #6c757d;
     text-decoration: none;
     display: block;
     transition: all 0.2s ease;
@@ -61,11 +61,11 @@
 }
 
 .toc-link:hover {
-    color: #fff;
+    color: #212529;
     padding-left: 5px;
 }
 
-.toc-level-1 { padding-left: 20px; font-weight: 600; color: #eee; }
+.toc-level-1 { padding-left: 20px; font-weight: 600; color: #212529; }
 .toc-level-2 { padding-left: 35px; }
 .toc-level-3 { padding-left: 50px; font-size: 0.85rem; }
 
@@ -80,10 +80,10 @@
 .lecture-document {
     max-width: 800px;
     margin: 0 auto;
-    background: #232329;
+    background: #ffffff;
     padding: 50px;
     border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     min-height: 100%;
     line-height: 1.7;
     font-size: 1.1rem;
@@ -93,7 +93,7 @@
     margin-top: 2rem;
     margin-bottom: 1rem;
     font-weight: 700;
-    color: #fff;
+    color: #212529;
 }
 
 h1.lecture-heading { font-size: 2.2rem; border-bottom: 2px solid var(--reader-primary); padding-bottom: 10px; }
@@ -113,18 +113,18 @@ h3.lecture-heading { font-size: 1.5rem; }
 .lecture-image {
     max-width: 100%;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .lecture-table {
     width: 100%;
     margin-bottom: 1.5rem;
-    color: #eee;
+    color: #212529;
     border-color: var(--reader-border);
 }
 
 .lecture-table th {
-    background-color: rgba(255,255,255,0.05);
+    background-color: #f8f9fa;
 }
 
 .lecture-table td, .lecture-table th {
@@ -134,20 +134,20 @@ h3.lecture-heading { font-size: 1.5rem; }
 /* Annotation Toolbar */
 .annotation-toolbar {
     position: fixed;
-    background: #333;
+    background: #ffffff;
     border-radius: 8px;
     padding: 5px;
     display: none;
     gap: 5px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     z-index: 1000;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--reader-border);
 }
 
 .annotation-btn {
     background: transparent;
     border: none;
-    color: #fff;
+    color: #212529;
     width: 32px;
     height: 32px;
     border-radius: 4px;
@@ -159,14 +159,14 @@ h3.lecture-heading { font-size: 1.5rem; }
 }
 
 .annotation-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: #f8f9fa;
 }
 
 .color-picker {
     display: flex;
     gap: 4px;
     padding: 0 5px;
-    border-left: 1px solid rgba(255,255,255,0.1);
+    border-left: 1px solid var(--reader-border);
     margin-left: 5px;
 }
 
@@ -174,7 +174,7 @@ h3.lecture-heading { font-size: 1.5rem; }
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    border: 2px solid #fff;
+    border: 2px solid #dee2e6;
     cursor: pointer;
 }
 
