@@ -1,18 +1,16 @@
-@model LexiLearn.ViewModels.LectureQuizViewModel
+﻿@model LexiLearn.ViewModels.LectureQuizViewModel
 @{
     ViewData["Title"] = "Bai tap: " + Model.LectureTitle;
 }
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
+<div class="container-fluid py-4 px-lg-5">
+    <div class="row">
+        <!-- Main Quiz Content -->
+        <div class="col-lg-9 col-md-8">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold mb-0 text-dark">Luyen tap trac nghiem</h2>
                     <p class="text-muted mb-0">Tu bai giang: <a href="/Lecture/Details/@Model.LectureId" class="text-primary text-decoration-none">@Model.LectureTitle</a></p>
-                </div>
-                <div class="text-end">
-                    <span class="badge bg-primary p-2 fs-6"><i class="fas fa-list-ol me-1"></i> @Model.TotalQuestions cau hoi</span>
                 </div>
             </div>
 
@@ -24,7 +22,7 @@
                         @for (int i = 0; i < Model.Questions.Count; i++)
                         {
                             var q = Model.Questions[i];
-                            <div class="quiz-item mb-5 pb-4 border-bottom border-light">
+                            <div class="quiz-item mb-5 pb-4 border-bottom border-light" id="quiz_@q.QuizId">
                                 <h5 class="text-dark mb-4">
                                     <span class="badge bg-secondary me-2">Cau @(i + 1)</span> 
                                     @q.QuestionText
@@ -88,6 +86,33 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Sidebar Index -->
+        <div class="col-lg-3 col-md-4">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 80px; z-index: 100;">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold fs-6"><i class="fas fa-list-ol me-2"></i> Mục lục câu hỏi</h5>
+                    <small class="text-white-50">Tổng cộng @Model.TotalQuestions câu</small>
+                </div>
+                <div class="card-body bg-light">
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        @for (int i = 0; i < Model.Questions.Count; i++)
+                        {
+                            var q = Model.Questions[i];
+                            <a href="#quiz_@q.QuizId" id="index_btn_@q.QuizId" class="btn btn-outline-secondary btn-sm" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; border-radius: 8px;">
+                                @(i + 1)
+                            </a>
+                        }
+                    </div>
+                    <hr>
+                    <div class="d-flex flex-column gap-2 small text-muted">
+                        <div class="d-flex align-items-center"><div class="bg-success rounded me-2" style="width: 15px; height: 15px;"></div> Đã làm đúng</div>
+                        <div class="d-flex align-items-center"><div class="bg-danger rounded me-2" style="width: 15px; height: 15px;"></div> Làm sai</div>
+                        <div class="d-flex align-items-center"><div class="border border-secondary rounded me-2" style="width: 15px; height: 15px;"></div> Chưa kiểm tra</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -136,6 +161,20 @@
         background-color: #6366f1;
         color: white;
     }
+
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Highlight the target when scrolling to it */
+    .quiz-item:target {
+        animation: highlight 2s ease;
+    }
+    
+    @@keyframes highlight {
+        0% { background-color: rgba(99, 102, 241, 0.2); }
+        100% { background-color: transparent; }
+    }
 </style>
 
 @section Scripts {
@@ -173,14 +212,14 @@
                     const quizId = this.getAttribute('data-quiz-id');
                     
                     // Find selected radio
-                    const selectedRadio = document.querySelector(`input[name="answers[${quizId}]"]:checked`);
+                    const selectedRadio = document.querySelector(input[name="answers[]"]:checked);
                     if (!selectedRadio) {
                         alert('Vui lòng chọn một đáp án trước khi kiểm tra!');
                         return;
                     }
                     
                     const selectedAnswer = selectedRadio.value;
-                    const explanationDiv = document.getElementById(`explanation_${quizId}`);
+                    const explanationDiv = document.getElementById(explanation_);
                     
                     // Show loading
                     this.disabled = true;
@@ -207,9 +246,9 @@
                         }
                         
                         // Remove previous coloring
-                        const radios = document.querySelectorAll(`input[name="answers[${quizId}]"]`);
+                        const radios = document.querySelectorAll(input[name="answers[]"]);
                         radios.forEach(r => {
-                            const label = document.querySelector(`label[for="${r.id}"]`);
+                            const label = document.querySelector(label[for=""]);
                             label.classList.remove('bg-success', 'bg-danger', 'text-white', 'text-dark');
                             label.classList.add('text-dark');
                             
@@ -235,6 +274,18 @@
                         
                         // Update button state
                         this.innerHTML = '<i class="fas fa-check me-1"></i> Đã kiểm tra';
+
+                        // Update index button color
+                        const indexBtn = document.getElementById(index_btn_);
+                        if (indexBtn) {
+                            indexBtn.classList.remove('btn-outline-secondary');
+                            indexBtn.classList.add('text-white');
+                            if (result.isCorrect) {
+                                indexBtn.classList.add('btn-success');
+                            } else {
+                                indexBtn.classList.add('btn-danger');
+                            }
+                        }
                         
                     } catch (error) {
                         alert('Đã xảy ra lỗi: ' + error.message);
@@ -246,3 +297,4 @@
         });
     </script>
 }
+
