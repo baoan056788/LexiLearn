@@ -29,17 +29,17 @@
             <div class="d-flex align-items-center">
                 @if (Model.Quizzes.Any())
                 {
-                    <a href="/Lecture/Quiz/@Model.Lecture.LectureId" class="btn btn-outline-success btn-sm rounded-pill px-3 me-3">
+                    <a href="/Lecture/Quiz/@Model.Lecture.LectureId" class="btn btn-success text-white btn-sm rounded-pill px-3 me-3 border-0 shadow-sm fw-semibold">
                         <i class="fas fa-tasks me-1"></i> Lam bai tap (@Model.Quizzes.Count)
                     </a>
                 }
                 
                 
-                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 me-3" type="button" id="toggleNotebookBtn">
+                <button class="btn btn-primary text-white btn-sm rounded-pill px-3 me-3 border-0 shadow-sm fw-semibold" type="button" id="toggleNotebookBtn">
                     <i class="fas fa-book me-1"></i> So tay
                 </button>
                 
-                <a href="/Lecture/Download/@Model.Lecture.LectureId" class="btn btn-outline-secondary btn-sm rounded-pill px-3 me-3" title="Tai xuong ban goc">
+                <a href="/Lecture/Download/@Model.Lecture.LectureId" class="btn btn-secondary text-white btn-sm rounded-pill px-3 me-3 border-0 shadow-sm fw-semibold" title="Tai xuong ban goc">
                     <i class="fas fa-download me-1"></i> Doc
                 </a>
                 
