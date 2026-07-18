@@ -495,41 +495,55 @@ namespace LexiLearn.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> CheckAnswer([FromBody] LexiLearn.ViewModels.CheckQuizRequest request, [FromServices] LexiLearn.Services.GeminiQuizService _geminiQuizService)
         {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            int userId = string.IsNullOrEmpty(userIdStr) ? 0 : int.Parse(userIdStr);
-            var quiz = await _context.LectureQuizzes
-                .Include(q => q.Lecture)
-                .FirstOrDefaultAsync(q => q.QuizId == request.QuizId);
-
-            if (quiz == null) return NotFound(new { error = "Quiz not found" });
-
-            if (quiz.Lecture.UserId != userId && !quiz.Lecture.IsPublic)
-                return Forbid();
-
-            // If Explanation is missing or it's a generic "A" answer from Word parser without explanation
-            if (string.IsNullOrEmpty(quiz.Explanation))
+            try
             {
-                try
+                if (request == null)
                 {
-                    var aiResult = await _geminiQuizService.EvaluateQuizAsync(quiz);
-                    quiz.CorrectAnswer = aiResult.CorrectAnswer;
-                    quiz.Explanation = aiResult.ExplanationHtml;
-                    await _context.SaveChangesAsync();
+                    return BadRequest(new { error = "Yêu cầu không hợp lệ. Vui lòng thử lại." });
                 }
-                catch (Exception ex)
+
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                int userId = string.IsNullOrEmpty(userIdStr) ? 0 : int.Parse(userIdStr);
+                var quiz = await _context.LectureQuizzes
+                    .Include(q => q.Lecture)
+                    .FirstOrDefaultAsync(q => q.QuizId == request.QuizId);
+
+                if (quiz == null) return NotFound(new { error = "Quiz not found" });
+
+                if (quiz.Lecture.UserId != userId && !quiz.Lecture.IsPublic)
                 {
-                    return StatusCode(500, new { error = "AI Evaluation failed: " + ex.Message });
+                    return StatusCode(403, new { error = "Bạn không có quyền truy cập." });
                 }
+
+                // If Explanation is missing or it's a generic "A" answer from Word parser without explanation
+                if (string.IsNullOrEmpty(quiz.Explanation))
+                {
+                    try
+                    {
+                        var aiResult = await _geminiQuizService.EvaluateQuizAsync(quiz);
+                        quiz.CorrectAnswer = aiResult.CorrectAnswer;
+                        quiz.Explanation = aiResult.ExplanationHtml;
+                        await _context.SaveChangesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        return StatusCode(500, new { error = "AI Evaluation failed: " + ex.Message });
+                    }
+                }
+
+                bool isCorrect = string.Equals(request.SelectedAnswer, quiz.CorrectAnswer, StringComparison.OrdinalIgnoreCase);
+
+                return Json(new
+                {
+                    isCorrect = isCorrect,
+                    correctAnswer = quiz.CorrectAnswer,
+                    explanationHtml = quiz.Explanation
+                });
             }
-
-            bool isCorrect = string.Equals(request.SelectedAnswer, quiz.CorrectAnswer, StringComparison.OrdinalIgnoreCase);
-
-            return Json(new
+            catch (Exception ex)
             {
-                isCorrect = isCorrect,
-                correctAnswer = quiz.CorrectAnswer,
-                explanationHtml = quiz.Explanation
-            });
+                return StatusCode(500, new { error = "Internal server error: " + ex.Message });
+            }
         }
     }
 }
