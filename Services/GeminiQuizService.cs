@@ -46,6 +46,12 @@ namespace LexiLearn.Services
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Gemini quiz evaluation failed with {StatusCode}: {Response}", response.StatusCode, responseText);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || response.StatusCode == (System.Net.HttpStatusCode)429)
+                {
+                    throw new Exception("Hệ thống AI đang quá tải do có nhiều người sử dụng. Vui lòng đợi khoảng 1 phút rồi thử lại nhé!");
+                }
+                
                 throw new Exception("Gemini API request failed. Status: " + response.StatusCode + ". Response: " + responseText);
             }
 
