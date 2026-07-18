@@ -645,6 +645,7 @@
                     try {
                         const response = await fetch('/Lecture/CheckAnswer', {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
