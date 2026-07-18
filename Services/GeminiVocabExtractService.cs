@@ -6,7 +6,7 @@ namespace LexiLearn.Services
 {
     public class GeminiVocabExtractService
     {
-        private const string DefaultModel = "gemini-2.5-flash";
+        private const string DefaultModel = "gemini-2.0-flash";
         private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
 
         private static readonly HashSet<string> SupportedImageTypes = new(StringComparer.OrdinalIgnoreCase)

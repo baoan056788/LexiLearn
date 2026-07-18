@@ -13,7 +13,7 @@ namespace LexiLearn.Services
 
     public class GeminiQuizService
     {
-        private const string DefaultModel = "gemini-2.5-flash";
+        private const string DefaultModel = "gemini-2.0-flash";
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GeminiQuizService> _logger;
