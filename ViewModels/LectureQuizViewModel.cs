@@ -19,6 +19,8 @@ namespace LexiLearn.ViewModels
         public string CorrectAnswer { get; set; } = string.Empty;
         public string? UserAnswer { get; set; }
         public string? Explanation { get; set; }
+        public int? SectionId { get; set; }
+        public string? SectionHtml { get; set; }
     }
 
     public class QuizSubmitViewModel
@@ -37,3 +39,4 @@ namespace LexiLearn.ViewModels
         public List<QuizItemViewModel> Questions { get; set; } = new();
     }
 }
+

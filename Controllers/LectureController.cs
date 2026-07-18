@@ -187,7 +187,7 @@ namespace LexiLearn.Controllers
                 .Include(l => l.User)
                 .Include(l => l.Course)
                 .Include(l => l.Sections.OrderBy(s => s.SortOrder))
-                .Include(l => l.Quizzes.OrderBy(q => q.SortOrder))
+                .Include(l => l.Quizzes.OrderBy(q => q.SortOrder)).ThenInclude(q => q.Section)
                 .FirstOrDefaultAsync(l => l.LectureId == id);
 
             if (lecture == null) return NotFound();
@@ -415,7 +415,7 @@ namespace LexiLearn.Controllers
             int userId = string.IsNullOrEmpty(userIdStr) ? 0 : int.Parse(userIdStr);
             var lecture = await _context.Lectures
                 .AsNoTracking()
-                .Include(l => l.Quizzes.OrderBy(q => q.SortOrder))
+                .Include(l => l.Quizzes.OrderBy(q => q.SortOrder)).ThenInclude(q => q.Section)
                 .FirstOrDefaultAsync(l => l.LectureId == id && (l.UserId == userId || l.IsPublic));
 
             if (lecture == null) return NotFound();
@@ -439,7 +439,9 @@ namespace LexiLearn.Controllers
                     OptionC = q.OptionC,
                     OptionD = q.OptionD,
                     CorrectAnswer = q.CorrectAnswer,
-                    Explanation = q.Explanation
+                    Explanation = q.Explanation,
+                      SectionId = q.SectionId,
+                      SectionHtml = q.Section != null ? q.Section.HtmlContent : null
                 }).ToList()
             };
 
@@ -471,6 +473,8 @@ namespace LexiLearn.Controllers
                 OptionD = q.OptionD,
                 CorrectAnswer = q.CorrectAnswer,
                 Explanation = q.Explanation,
+                      SectionId = q.SectionId,
+                      SectionHtml = q.Section != null ? q.Section.HtmlContent : null,
                 UserAnswer = answers.ContainsKey(q.QuizId) ? answers[q.QuizId] : null
             }).ToList();
 
@@ -529,3 +533,4 @@ namespace LexiLearn.Controllers
         }
     }
 }
+
