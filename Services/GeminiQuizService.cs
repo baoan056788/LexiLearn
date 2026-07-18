@@ -62,9 +62,34 @@ namespace LexiLearn.Services
                 throw new Exception("Gemini returned an empty result.");
             }
 
-            var result = JsonSerializer.Deserialize<AiQuizEvaluationResult>(
-                generatedJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            // Cleanup potential markdown if responseMimeType fails
+            generatedJson = generatedJson.Trim();
+            if (generatedJson.StartsWith("```json"))
+            {
+                generatedJson = generatedJson.Substring(7);
+            }
+            if (generatedJson.StartsWith("```"))
+            {
+                generatedJson = generatedJson.Substring(3);
+            }
+            if (generatedJson.EndsWith("```"))
+            {
+                generatedJson = generatedJson.Substring(0, generatedJson.Length - 3);
+            }
+            generatedJson = generatedJson.Trim();
+
+            AiQuizEvaluationResult result;
+            try
+            {
+                result = JsonSerializer.Deserialize<AiQuizEvaluationResult>(
+                    generatedJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to parse JSON from Gemini. Raw text: {RawText}", generatedJson);
+                throw new Exception($"Gemini returned malformed JSON. ({ex.Message}) Raw text length: {generatedJson.Length}");
+            }
 
             if (result == null || string.IsNullOrWhiteSpace(result.CorrectAnswer))
             {
@@ -113,6 +138,7 @@ namespace LexiLearn.Services
                 generationConfig = new
                 {
                     temperature = 0.2,
+                    maxOutputTokens = 8192,
                     responseMimeType = "application/json"
                 }
             };
