@@ -417,7 +417,7 @@
             });
 
             document.querySelectorAll('input[type="radio"]').forEach(radio => {
-                radio.addEventListener('change', function() {
+                radio.addEventListener('click', function() {
                     const nameAttr = this.getAttribute('name');
                     const match = nameAttr.match(/answers\[(\d+)\]/);
                     if (match) {
@@ -436,7 +436,7 @@
                         
                         const btn = document.querySelector(`.check-btn[data-quiz-id="${quizId}"]`);
                         if (btn) {
-                            btn.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra lại bằng AI';
+                            btn.innerHTML = '<i class="fas fa-robot me-1"></i> Kiểm tra bằng AI';
                             btn.disabled = false;
                             btn.classList.remove('btn-secondary');
                             btn.classList.add('btn-primary');

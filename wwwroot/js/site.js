@@ -472,24 +472,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (noteForm) {
         if (document.getElementById('workspaceQuillContainer')) {
-            workspaceQuill = new Quill('#workspaceQuillContainer', {
-                theme: 'snow',
-                placeholder: 'Ghi chu, meo nho, vi du, loi hay nham...',
-                modules: {
-                    toolbar: [
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        [{ 'color': [] }, { 'background': [] }],
-                        ['clean']
-                    ]
-                }
-            });
-            workspaceQuill.on('text-change', function() {
-                if (noteContentInput) {
-                    noteContentInput.value = workspaceQuill.root.innerHTML;
-                    persistNoteDraft();
-                }
-            });
+            try {
+                workspaceQuill = new Quill('#workspaceQuillContainer', {
+                    theme: 'snow',
+                    placeholder: 'Ghi chu, meo nho, vi du, loi hay nham...',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['clean']
+                        ]
+                    }
+                });
+                workspaceQuill.on('text-change', function() {
+                    if (noteContentInput) {
+                        noteContentInput.value = workspaceQuill.root.innerHTML;
+                        persistNoteDraft();
+                    }
+                });
+            } catch (e) {
+                console.error('Quill initialization failed:', e);
+                workspaceQuill = null;
+            }
         }
 
         loadNotebookSetOptions();
