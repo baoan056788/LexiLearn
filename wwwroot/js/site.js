@@ -468,8 +468,30 @@ document.addEventListener("DOMContentLoaded", function () {
     const noteSaveBtn = document.getElementById('noteSaveBtn');
     const noteDraftStorageKey = 'lexilearn.noteDraft.v1';
     let currentNotePinned = false;
+    let workspaceQuill = null;
 
     if (noteForm) {
+        if (document.getElementById('workspaceQuillContainer')) {
+            workspaceQuill = new Quill('#workspaceQuillContainer', {
+                theme: 'snow',
+                placeholder: 'Ghi chu, meo nho, vi du, loi hay nham...',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        ['clean']
+                    ]
+                }
+            });
+            workspaceQuill.on('text-change', function() {
+                if (noteContentInput) {
+                    noteContentInput.value = workspaceQuill.root.innerHTML;
+                    persistNoteDraft();
+                }
+            });
+        }
+
         loadNotebookSetOptions();
         loadNotes();
         updateNotePinButton();
@@ -996,7 +1018,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span>${note.isPinned ? '<i class="fas fa-thumbtack text-primary"></i>' : ''}</span>
                 </div>
                 <div class="note-item-meta">${escapeHtml(note.relatedTerm || note.setTitle || '')}</div>
-                <div class="note-item-preview">${escapeHtml(note.preview || '')}</div>
+                <div class="note-item-preview">${escapeHtml(stripHtml(note.preview || ''))}</div>
             `;
             button.addEventListener('click', function () {
                 loadNoteDetail(note.studyNoteId);
@@ -1019,6 +1041,7 @@ document.addEventListener("DOMContentLoaded", function () {
             noteRelatedTermInput.value = data.relatedTerm || '';
             noteTagsInput.value = data.tags || '';
             noteContentInput.value = data.content || '';
+            if (workspaceQuill) workspaceQuill.root.innerHTML = data.content || '';
             if (noteSetSelect) {
                 noteSetSelect.value = data.setId ? String(data.setId) : '';
             }
@@ -1034,6 +1057,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function resetNoteForm() {
         if (noteForm) noteForm.reset();
         if (noteIdInput) noteIdInput.value = '';
+        if (workspaceQuill) workspaceQuill.root.innerHTML = '';
         currentNotePinned = false;
         updateNotePinButton();
         clearNoteDraft();
@@ -1050,8 +1074,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function appendNoteContent(text) {
         if (!noteContentInput || !text) return;
-        const current = noteContentInput.value.trim();
-        noteContentInput.value = current ? `${current}\n\n${text}` : text;
+        if (workspaceQuill) {
+            const length = workspaceQuill.getLength();
+            workspaceQuill.insertText(length ? length - 1 : 0, (length > 1 ? '\n' : '') + text);
+            noteContentInput.value = workspaceQuill.root.innerHTML;
+        } else {
+            const current = noteContentInput.value.trim();
+            noteContentInput.value = current ? `${current}\n\n${text}` : text;
+        }
         persistNoteDraft();
     }
 
@@ -1089,7 +1119,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (noteTitleInput && !noteTitleInput.value.trim()) noteTitleInput.value = draft.title || '';
             if (noteRelatedTermInput && !noteRelatedTermInput.value.trim()) noteRelatedTermInput.value = draft.relatedTerm || '';
             if (noteTagsInput && !noteTagsInput.value.trim()) noteTagsInput.value = draft.tags || '';
-            if (noteContentInput && !noteContentInput.value.trim()) noteContentInput.value = draft.content || '';
+            if (noteContentInput && !noteContentInput.value.trim()) {
+                noteContentInput.value = draft.content || '';
+                if (workspaceQuill) workspaceQuill.root.innerHTML = draft.content || '';
+            }
             if (noteSetSelect && draft.setId) noteSetSelect.value = draft.setId;
             currentNotePinned = !!draft.isPinned;
             updateNotePinButton();
@@ -1119,6 +1152,12 @@ document.addEventListener("DOMContentLoaded", function () {
     function hideNoteMessages() {
         noteError?.classList.add('d-none');
         noteSaveMsg?.classList.add('d-none');
+    }
+
+    function stripHtml(html) {
+        let tmp = document.createElement("DIV");
+        tmp.innerHTML = html || '';
+        return tmp.textContent || tmp.innerText || "";
     }
 
     function escapeHtml(value) {
