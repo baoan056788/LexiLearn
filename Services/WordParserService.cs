@@ -362,7 +362,7 @@ namespace LexiLearn.Services
             if (currentQuestion != null)
             {
                 // Check if all A,B,C,D are on the same line
-                var sameLineOptions = Regex.Match(text, @"^\s*A[\.\:\)]\s*(.+?)\s+B[\.\:\)]\s*(.+?)\s+C[\.\:\)]\s*(.+?)\s+D[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
+                var sameLineOptions = Regex.Match(text, @"^\s*\(?A[\.\:\)]\s*(.+?)\s+\(?B[\.\:\)]\s*(.+?)\s+\(?C[\.\:\)]\s*(.+?)\s+\(?D[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
                 if (sameLineOptions.Success)
                 {
                     optA = sameLineOptions.Groups[1].Value.Trim();
@@ -373,7 +373,7 @@ namespace LexiLearn.Services
                 }
 
                 // Check 2 options on same line
-                var twoOptionsAB = Regex.Match(text, @"^\s*A[\.\:\)]\s*(.+?)\s+B[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
+                var twoOptionsAB = Regex.Match(text, @"^\s*\(?A[\.\:\)]\s*(.+?)\s+\(?B[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
                 if (twoOptionsAB.Success)
                 {
                     optA = twoOptionsAB.Groups[1].Value.Trim();
@@ -381,7 +381,7 @@ namespace LexiLearn.Services
                     return true;
                 }
                 
-                var twoOptionsCD = Regex.Match(text, @"^\s*C[\.\:\)]\s*(.+?)\s+D[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
+                var twoOptionsCD = Regex.Match(text, @"^\s*\(?C[\.\:\)]\s*(.+?)\s+\(?D[\.\:\)]\s*(.+)$", RegexOptions.IgnoreCase);
                 if (twoOptionsCD.Success)
                 {
                     optC = twoOptionsCD.Groups[1].Value.Trim();
@@ -390,7 +390,7 @@ namespace LexiLearn.Services
                 }
 
                 // Single option per line
-                var optionMatch = Regex.Match(text, @"^\s*([A-D])[\.\:\)]\s*(.*)", RegexOptions.IgnoreCase);
+                var optionMatch = Regex.Match(text, @"^\s*\(?([A-D])[\.\:\)]\s*(.*)", RegexOptions.IgnoreCase);
                 if (optionMatch.Success)
                 {
                     var letter = optionMatch.Groups[1].Value.ToUpper();
