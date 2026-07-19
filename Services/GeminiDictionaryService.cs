@@ -7,7 +7,7 @@ namespace LexiLearn.Services
 {
     public class GeminiDictionaryService
     {
-        private const string DefaultModel = "gemini-flash-latest";
+        private const string DefaultModel = "gemini-flash-lite-latest";
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GeminiDictionaryService> _logger;

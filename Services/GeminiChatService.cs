@@ -10,7 +10,7 @@ namespace LexiLearn.Services
 {
     public class GeminiChatService
     {
-        private const string DefaultModel = "gemini-flash-latest";
+        private const string DefaultModel = "gemini-flash-lite-latest";
         private const string SystemPrompt = """
             Bạn là trợ lý học từ vựng tiếng Anh cho người Việt trong ứng dụng LexiLearn.
             Trả lời bằng tiếng Việt, rõ ràng, ngắn gọn và có cấu trúc.
