@@ -64,7 +64,7 @@ namespace LexiLearn.Services
 
             // Cleanup potential markdown if responseMimeType fails
             generatedJson = generatedJson.Trim();
-            if (generatedJson.StartsWith("```json"))
+            if (generatedJson.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
             {
                 generatedJson = generatedJson.Substring(7);
             }
@@ -77,6 +77,14 @@ namespace LexiLearn.Services
                 generatedJson = generatedJson.Substring(0, generatedJson.Length - 3);
             }
             generatedJson = generatedJson.Trim();
+
+            // Fix for Gemini sometimes returning extra closing braces (e.g. "}\n}")
+            generatedJson = generatedJson.TrimEnd();
+            while (generatedJson.EndsWith("}"))
+            {
+                generatedJson = generatedJson.Substring(0, generatedJson.Length - 1).TrimEnd();
+            }
+            generatedJson += "}";
 
             AiQuizEvaluationResult result;
             try
