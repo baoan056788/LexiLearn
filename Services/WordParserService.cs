@@ -29,6 +29,7 @@ namespace LexiLearn.Services
             public string AnchorId { get; set; } = string.Empty;
             public int HeadingLevel { get; set; } = 1;
             public int SortOrder { get; set; }
+            public string HtmlContent { get; set; } = string.Empty;
         }
 
         public async Task<ParseResult> ParseAsync(IFormFile file, int lectureId)
@@ -112,29 +113,33 @@ namespace LexiLearn.Services
                             SortOrder = sectionIndex
                         });
 
-                        html.AppendLine($"<h{headingLevel} id=\"{anchorId}\" class=\"lecture-heading\">{FormatRunsToHtml(para, imageMap)}</h{headingLevel}>");
+                        var headingHtml = $"<h{headingLevel} id=\"{anchorId}\" class=\"lecture-heading\">{FormatRunsToHtml(para, imageMap)}</h{headingLevel}>\n";
+                        html.AppendLine(headingHtml);
+                        sections.Last().HtmlContent += headingHtml;
                         continue;
                     }
 
                     // Check for quiz questions
                     var trimmedText = text.Trim();
-                    TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, 0);
+                    TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionIndex);
+
+                    var paragraphHtmlBuilder = new StringBuilder();
 
                     // Check for images in paragraph
                     var hasImage = para.Descendants<DocumentFormat.OpenXml.Drawing.Blip>().Any();
 
                     if (hasImage)
                     {
-                        html.AppendLine("<div class=\"lecture-image-container\">");
+                        paragraphHtmlBuilder.AppendLine("<div class=\"lecture-image-container\">");
                         foreach (var blip in para.Descendants<DocumentFormat.OpenXml.Drawing.Blip>())
                         {
                             var embed = blip.Embed?.Value;
                             if (embed != null && imageMap.TryGetValue(embed, out var imgUrl))
                             {
-                                html.AppendLine($"<img src=\"{imgUrl}\" class=\"lecture-image\" alt=\"Hinh anh bai giang\" loading=\"lazy\" />");
+                                paragraphHtmlBuilder.AppendLine($"<img src=\"{imgUrl}\" class=\"lecture-image\" alt=\"Hinh anh bai giang\" loading=\"lazy\" />");
                             }
                         }
-                        html.AppendLine("</div>");
+                        paragraphHtmlBuilder.AppendLine("</div>");
                     }
 
                     if (!string.IsNullOrWhiteSpace(text))
@@ -144,22 +149,37 @@ namespace LexiLearn.Services
                         var numPr = para.ParagraphProperties?.NumberingProperties;
                         if (numPr != null)
                         {
-                            html.AppendLine($"<li class=\"lecture-list-item\">{formattedHtml}</li>");
+                            paragraphHtmlBuilder.AppendLine($"<li class=\"lecture-list-item\">{formattedHtml}</li>");
                         }
                         else
                         {
-                            html.AppendLine($"<p class=\"lecture-paragraph\">{formattedHtml}</p>");
+                            paragraphHtmlBuilder.AppendLine($"<p class=\"lecture-paragraph\">{formattedHtml}</p>");
+                        }
+                    }
+
+                    if (paragraphHtmlBuilder.Length > 0)
+                    {
+                        var pHtml = paragraphHtmlBuilder.ToString();
+                        html.Append(pHtml);
+                        if (sections.Count > 0)
+                        {
+                            sections.Last().HtmlContent += pHtml;
                         }
                     }
                 }
                 else if (element is Table table)
                 {
-                    html.AppendLine(ConvertTableToHtml(table, imageMap));
+                    var tableHtml = ConvertTableToHtml(table, imageMap) + "\n";
+                    html.Append(tableHtml);
+                    if (sections.Count > 0)
+                    {
+                        sections.Last().HtmlContent += tableHtml;
+                    }
                 }
             }
 
             // Flush any remaining quiz
-            FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, 0);
+            FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionIndex);
 
             result.HtmlContent = html.ToString();
             result.Sections = sections;
@@ -436,7 +456,8 @@ namespace LexiLearn.Services
                     OptionC = optC,
                     OptionD = optD,
                     CorrectAnswer = "A",
-                    SortOrder = quizzes.Count + 1
+                    SortOrder = quizzes.Count + 1,
+                    SectionId = sectionId > 0 ? sectionId : null
                 });
             }
             currentQuestion = null;

@@ -142,6 +142,10 @@ namespace LexiLearn.Controllers
                 lecture.HtmlContent = parseResult.HtmlContent;
                 lecture.UpdatedAt = DateTime.Now;
 
+
+
+                var sectionMap = new Dictionary<int, int>(); // SortOrder -> SectionId
+
                 foreach (var sectionInfo in parseResult.Sections)
                 {
                     var section = new LectureSection
@@ -150,14 +154,25 @@ namespace LexiLearn.Controllers
                         Title = sectionInfo.Title,
                         AnchorId = sectionInfo.AnchorId,
                         HeadingLevel = sectionInfo.HeadingLevel,
-                        SortOrder = sectionInfo.SortOrder
+                        SortOrder = sectionInfo.SortOrder,
+                        HtmlContent = sectionInfo.HtmlContent
                     };
                     _context.LectureSections.Add(section);
+                    await _context.SaveChangesAsync();
+                    sectionMap[section.SortOrder] = section.SectionId;
                 }
 
                 foreach (var quiz in parseResult.Quizzes)
                 {
                     quiz.LectureId = lecture.LectureId;
+                    if (quiz.SectionId.HasValue && sectionMap.TryGetValue(quiz.SectionId.Value, out var realSectionId))
+                    {
+                        quiz.SectionId = realSectionId;
+                    }
+                    else
+                    {
+                        quiz.SectionId = null;
+                    }
                     _context.LectureQuizzes.Add(quiz);
                 }
 
