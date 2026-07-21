@@ -121,7 +121,7 @@ namespace LexiLearn.Services
 
                     // Check for quiz questions
                     var trimmedText = text.Trim();
-                    TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionIndex);
+                    bool isQuizLine = TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionIndex);
 
                     var paragraphHtmlBuilder = new StringBuilder();
 
@@ -161,7 +161,7 @@ namespace LexiLearn.Services
                     {
                         var pHtml = paragraphHtmlBuilder.ToString();
                         html.Append(pHtml);
-                        if (sections.Count > 0)
+                        if (!isQuizLine && sections.Count > 0)
                         {
                             sections.Last().HtmlContent += pHtml;
                         }
