@@ -90,6 +90,7 @@ namespace LexiLearn.Services
             var quizBuffer = new StringBuilder();
             string? currentQuestion = null;
             string? optA = null, optB = null, optC = null, optD = null;
+            int currentQuizSectionId = 0;
 
             foreach (var element in body.Elements())
             {
@@ -121,7 +122,7 @@ namespace LexiLearn.Services
 
                     // Check for quiz questions
                     var trimmedText = text.Trim();
-                    bool isQuizLine = TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionIndex);
+                    bool isQuizLine = TryDetectQuiz(trimmedText, ref currentQuestion, ref optA, ref optB, ref optC, ref optD, ref currentQuizSectionId, quizzes, sectionIndex);
 
                     var paragraphHtmlBuilder = new StringBuilder();
 
@@ -179,7 +180,7 @@ namespace LexiLearn.Services
             }
 
             // Flush any remaining quiz
-            FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionIndex);
+            FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, currentQuizSectionId);
 
             result.HtmlContent = html.ToString();
             result.Sections = sections;
@@ -368,14 +369,15 @@ namespace LexiLearn.Services
             return sb.ToString();
         }
 
-        private bool TryDetectQuiz(string text, ref string? currentQuestion, ref string? optA, ref string? optB, ref string? optC, ref string? optD, List<LectureQuiz> quizzes, int sectionId)
+        private bool TryDetectQuiz(string text, ref string? currentQuestion, ref string? optA, ref string? optB, ref string? optC, ref string? optD, ref int currentQuizSectionId, List<LectureQuiz> quizzes, int currentDocSectionIndex)
         {
             // Detect question: starts with "Câu", "Cau", "Question" followed by number, OR just a number "1. "
             var questionMatch = Regex.Match(text, @"^(?:(?:C[aâ]u|Question)\s*)?\d+[\.\:\)\s]+(.*)", RegexOptions.IgnoreCase);
             if (questionMatch.Success)
             {
-                FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionId);
+                FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, currentQuizSectionId);
                 currentQuestion = text;
+                currentQuizSectionId = currentDocSectionIndex;
                 return true;
             }
 
@@ -431,7 +433,7 @@ namespace LexiLearn.Services
                 // Wait, if we already have A and B, we shouldn't clear, we should Flush!
                 if (optA != null && optB != null)
                 {
-                    FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, sectionId);
+                    FlushQuiz(ref currentQuestion, ref optA, ref optB, ref optC, ref optD, quizzes, currentQuizSectionId);
                 }
                 else
                 {
