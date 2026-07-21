@@ -313,21 +313,36 @@ namespace LexiLearn.Controllers
                 var parseResult = await _wordParser.ParseAsync(model.WordFile, lecture.LectureId);
                 lecture.HtmlContent = parseResult.HtmlContent;
 
-                foreach (var si in parseResult.Sections)
+                var sectionMap = new Dictionary<int, int>(); // SortOrder -> SectionId
+
+                foreach (var sectionInfo in parseResult.Sections)
                 {
-                    _context.LectureSections.Add(new LectureSection
+                    var section = new LectureSection
                     {
                         LectureId = lecture.LectureId,
-                        Title = si.Title,
-                        AnchorId = si.AnchorId,
-                        HeadingLevel = si.HeadingLevel,
-                        SortOrder = si.SortOrder
-                    });
+                        Title = sectionInfo.Title,
+                        AnchorId = sectionInfo.AnchorId,
+                        HeadingLevel = sectionInfo.HeadingLevel,
+                        SortOrder = sectionInfo.SortOrder,
+                        HtmlContent = sectionInfo.HtmlContent
+                    };
+                    _context.LectureSections.Add(section);
+                    await _context.SaveChangesAsync();
+                    sectionMap[section.SortOrder] = section.SectionId;
                 }
-                foreach (var q in parseResult.Quizzes)
+
+                foreach (var quiz in parseResult.Quizzes)
                 {
-                    q.LectureId = lecture.LectureId;
-                    _context.LectureQuizzes.Add(q);
+                    quiz.LectureId = lecture.LectureId;
+                    if (quiz.SectionId.HasValue && sectionMap.TryGetValue(quiz.SectionId.Value, out var realSectionId))
+                    {
+                        quiz.SectionId = realSectionId;
+                    }
+                    else
+                    {
+                        quiz.SectionId = null;
+                    }
+                    _context.LectureQuizzes.Add(quiz);
                 }
             }
 
