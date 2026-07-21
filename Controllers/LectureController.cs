@@ -506,6 +506,7 @@ namespace LexiLearn.Controllers
                 int userId = string.IsNullOrEmpty(userIdStr) ? 0 : int.Parse(userIdStr);
                 var quiz = await _context.LectureQuizzes
                     .Include(q => q.Lecture)
+                    .Include(q => q.Section)
                     .FirstOrDefaultAsync(q => q.QuizId == request.QuizId);
 
                 if (quiz == null) return NotFound(new { error = "Quiz not found" });

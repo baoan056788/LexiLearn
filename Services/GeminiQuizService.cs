@@ -109,8 +109,16 @@ namespace LexiLearn.Services
 
         private static object CreateRequest(LectureQuiz quiz)
         {
+            var passageText = "";
+            if (quiz.Section != null && !string.IsNullOrWhiteSpace(quiz.Section.HtmlContent))
+            {
+                // Remove basic HTML tags just in case they confuse the prompt, or leave them since Gemini handles HTML well.
+                // We'll just provide the raw HTML content which contains the passage text.
+                passageText = $"\nReading Passage:\n{quiz.Section.HtmlContent}\n";
+            }
+
             var prompt = $$"""
-                You are an expert English teacher. Evaluate the following multiple-choice question.
+                You are an expert English teacher. Evaluate the following multiple-choice question.{{passageText}}
                 Question: {{quiz.QuestionText}}
                 A. {{quiz.OptionA}}
                 B. {{quiz.OptionB}}
